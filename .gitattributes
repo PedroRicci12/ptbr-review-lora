@@ -1,0 +1,3 @@
+# Normalize line endings to LF in the repository (the code also runs on Linux in Colab/Kaggle).
+* text=auto eol=lf
+*.ipynb text eol=lf
