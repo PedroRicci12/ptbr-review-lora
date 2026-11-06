@@ -4,7 +4,11 @@ version = "0.1.0"
 description = "QLoRA fine-tuning of a small LLM (1B-3B) for Brazilian Portuguese review sentiment classification."
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = [
+    "pandas>=3.1.1",
+    "pyarrow>=26.0.1",
+    "scikit-learn>=1.9.1",
+]
 
 [dependency-groups]
 dev = [

@@ -1,0 +1,39 @@
+{
+  "seed": 42,
+  "b2w": {
+    "raw_rows": 132373,
+    "after_cleaning": 128226,
+    "removed_overlap_with_repro": 10003,
+    "removed_same_text_as_repro": 130,
+    "pool_rows": 118093,
+    "pool_label_counts": {
+      "negativo": 29088,
+      "neutro": 13906,
+      "positivo": 75099
+    },
+    "pool_rating_counts": {
+      "1": 23051,
+      "2": 6037,
+      "3": 13906,
+      "4": 29916,
+      "5": 45183
+    }
+  },
+  "repro": {
+    "raw_rows": 10003,
+    "dev_rows": 2000,
+    "test_rows": 8003,
+    "dev_group_counts": {
+      "misto": 403,
+      "negativo": 690,
+      "neutro": 82,
+      "positivo": 825
+    },
+    "test_group_counts": {
+      "misto": 1615,
+      "negativo": 2759,
+      "neutro": 327,
+      "positivo": 3302
+    }
+  }
+}

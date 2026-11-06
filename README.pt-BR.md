@@ -6,7 +6,7 @@ Fine-tuning com QLoRA de um LLM aberto pequeno (1B–3B parâmetros) para classi
 em português do Brasil como **negativa**, **neutra** ou **positiva**, comparado com o modelo
 base e com baselines mais simples.
 
-> **Status:** em andamento — Etapa 1 (estrutura do projeto). Nenhum modelo foi treinado ainda
+> **Status:** em andamento — Etapa 2 (dados) concluída. Nenhum modelo foi treinado ainda
 > e não há resultados.
 
 ## Objetivo
@@ -17,11 +17,32 @@ classificação de sentimento em pt-BR em relação a:
 1. o mesmo modelo sem fine-tuning (prompting zero-shot / few-shot);
 2. baselines clássicas e baseadas em encoder (definidas na Etapa 3).
 
+## Dados
+
+| Papel | Dataset | Rótulos | Tamanho |
+|---|---|---|---|
+| Pool de treino | [B2W-Reviews01](https://github.com/americanas-tech/b2w-reviews01) (Americanas.com, 2018) | 1–5 estrelas → 3 classes | 118.093 |
+| Dev (análise e ajustes) | [RePro](https://huggingface.co/datasets/lucasnil/repro), divisão estratificada | polaridade anotada por humanos | 2.000 |
+| Teste (só avaliação final) | RePro, divisão estratificada | polaridade anotada por humanos | 8.003 |
+
+- Estrelas: 1–2 → `negativo`, 3 → `neutro`, 4–5 → `positivo`. RePro: avaliações anotadas como
+  negativas e positivas ao mesmo tempo ("misto") contam como `neutro`.
+- O RePro é um subconjunto da B2W: as 10.003 avaliações do RePro foram removidas do pool de
+  treino, além de 130 avaliações do pool com texto idêntico a um texto do RePro.
+- Os campos de perfil do avaliador (ano de nascimento, gênero, estado) são descartados no carregamento.
+- Os dois datasets são CC BY-NC-SA 4.0, então os modelos treinados aqui são não comerciais.
+- No dev, o rótulo das estrelas concorda com o rótulo humano em **74,4%** das avaliações (medido).
+
+Contagens por split: [reports/data_summary.json](reports/data_summary.json).
+Justificativas: decisões D5–D9 em [docs/decisions.md](docs/decisions.md).
+
 ## Estrutura do repositório
 
 ```
 ├── src/ptbr_review_lora/   # código reutilizável (dados, prompts, avaliação)
+├── scripts/                # pontos de entrada de linha de comando (ex.: preparação dos dados)
 ├── notebooks/              # notebooks para Colab/Kaggle (treino e inferência em GPU)
+├── reports/                # arquivos pequenos de resultados (só contagens e métricas, sem texto)
 ├── tests/                  # testes com pytest
 └── docs/decisions.md       # decisões de design e alternativas consideradas
 ```
@@ -45,6 +66,12 @@ Rodar os testes:
 uv run pytest
 ```
 
+Baixar (~55 MB, com versão fixada e checksum verificado) e preparar os dados:
+
+```bash
+uv run python scripts/prepare_data.py
+```
+
 O treino em GPU roda no Google Colab ou no Kaggle; os notebooks entram na Etapa 5.
 
 ## Resultados
@@ -55,7 +82,11 @@ Ainda não há. Todo número desta seção virá de uma execução real, com o n
 
 Serão documentadas ao longo do projeto. Já conhecida desde o início:
 
-- Rótulos derivados de estrelas têm ruído (o texto e a nota podem discordar).
+- Rótulos derivados de estrelas têm ruído: no dev, concordam com o rótulo humano em 74,4% das avaliações.
+- A distribuição de classes do teste é artificial (o RePro amostrou ~2.000 avaliações por nota),
+  então a acurácia não reflete o tráfego real; a métrica principal é o macro-F1.
+- Domínio: avaliações de produtos de e-commerce de 2018, não de restaurantes ou delivery.
+- Só duplicatas exatas de texto entre treino e avaliação foram removidas; quase-duplicatas não.
 
 ## Aprendizados
 
@@ -68,6 +99,11 @@ Preenchidos ao final de cada etapa.
   lê arquivos `.pth` com a codificação do sistema (cp1252), na qual `0x81` não existe.
   Correção: mover o projeto para um caminho sem acento (e fora do OneDrive). Ver D4 em
   [docs/decisions.md](docs/decisions.md).
+- **Etapa 2 — confirmar os fatos sobre os dados nos próprios dados.** O "dataset" da B2W no
+  Hugging Face Hub é só um script de carregamento (sem dados), então o CSV é baixado da fonte
+  original no GitHub. A descrição da fonte sugeria separador `;`, mas o arquivo usa `,`: ler o
+  cabeçalho resolveu. Remover o RePro do pool de treino pelo ID também não bastou: 92 textos do
+  RePro ainda apareciam idênticos no pool (provavelmente a mesma avaliação publicada para produtos diferentes).
 
 ## Licença
 
