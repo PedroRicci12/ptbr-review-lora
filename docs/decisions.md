@@ -197,7 +197,10 @@ Formato inspirado em ADRs (Architecture Decision Records).
   - `MAX_LEN` = menor valor entre 128/256/384/512 que cobre 95% das avaliações (medido no notebook);
   - 2 épocas, ficando com a de melhor macro-F1 no dev;
   - perda com pesos balanceados por classe (mesma escolha da D13);
-  - Google Colab, GPU T4.
+  - Google Colab, GPU T4. **Atualização:** na primeira tentativa o Colab gratuito não tinha GPU
+    disponível ("Nenhum back-end com GPU disponível"). O notebook passou a rodar também no Kaggle
+    (GPU T4), detectando a plataforma sozinho; a plataforma usada fica registrada no relatório.
+    No Kaggle, a P100 é evitada porque versões recentes do PyTorch não suportam mais a arquitetura dela.
 - **Hiperparâmetros fixos (padrão de fine-tuning de BERT, não ajustados):** lr 2e-5, batch 32,
   10% de warmup linear, weight decay 0,01 (exceto bias e LayerNorm), clipping 1,0, fp16, seed 42.
 - **Teste:** o notebook gera as previsões do teste, mas não calcula métricas (D12). As previsões são

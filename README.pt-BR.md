@@ -87,11 +87,16 @@ Treinar as baselines clássicas e avaliá-las no dev (~2 minutos na CPU de um no
 uv run python scripts/run_baselines.py
 ```
 
-Ajustar a baseline BERTimbau (GPU): abra
-[notebooks/03b_bertimbau.ipynb](https://colab.research.google.com/github/PedroRicci12/ptbr-review-lora/blob/main/notebooks/03b_bertimbau.ipynb)
-no Google Colab, escolha uma GPU T4 e rode todas as células.
+Ajustar a baseline BERTimbau (GPU) com
+[notebooks/03b_bertimbau.ipynb](notebooks/03b_bertimbau.ipynb), em qualquer uma das plataformas:
 
-O treino em GPU roda no Google Colab ou no Kaggle; os notebooks entram na Etapa 5.
+- **Google Colab:** [abrir no Colab](https://colab.research.google.com/github/PedroRicci12/ptbr-review-lora/blob/main/notebooks/03b_bertimbau.ipynb),
+  escolha uma GPU T4 e rode todas as células; o navegador baixa o `bertimbau_results.zip`.
+- **Kaggle:** importe o notebook do GitHub (*File → Import Notebook*), ajuste *Accelerator →
+  GPU T4 x2* e *Internet → on* e clique em *Save Version → Save & Run All*; o zip fica na aba
+  *Output* da versão. GPUs no Kaggle exigem conta verificada por celular.
+
+Descompacte os resultados na raiz do repositório: os arquivos vão para `reports/` e `predictions/`.
 
 ## Resultados
 
