@@ -184,3 +184,24 @@ Formato inspirado em ADRs (Architecture Decision Records).
   próximos modelos (o título ajuda e o neutro é sub-representado no treino).
 - **Cuidado:** como a configuração foi escolhida olhando o dev, o 0,762 é otimista; o número
   que vale é o do teste, na Etapa 6.
+
+## D14 — Etapa 3b: BERTimbau base ajustado (fine-tuning completo)
+
+- **Data:** 2026-11-09 (Etapa 3b)
+- **Modelo:** `neuralmind/bert-base-portuguese-cased` (110M parâmetros, MIT, pré-treinado no brWaC),
+  revisão fixada `94d69c9`. Os pesos só existem como `pytorch_model.bin` (pickle, que pode executar
+  código ao carregar); aceito por vir do próprio grupo autor e com revisão fixada.
+- **Decisões (escolhidas por Pedro):**
+  - base, não large (large: ~3× parâmetros, mais tempo e memória);
+  - pool inteiro (118.093), mesmo treino da regressão logística, para a comparação ser justa;
+  - `MAX_LEN` = menor valor entre 128/256/384/512 que cobre 95% das avaliações (medido no notebook);
+  - 2 épocas, ficando com a de melhor macro-F1 no dev;
+  - perda com pesos balanceados por classe (mesma escolha da D13);
+  - Google Colab, GPU T4.
+- **Hiperparâmetros fixos (padrão de fine-tuning de BERT, não ajustados):** lr 2e-5, batch 32,
+  10% de warmup linear, weight decay 0,01 (exceto bias e LayerNorm), clipping 1,0, fp16, seed 42.
+- **Teste:** o notebook gera as previsões do teste, mas não calcula métricas (D12). As previsões são
+  commitadas antes da Etapa 6, o que mostra que não foram alteradas depois.
+- **Mudança em relação ao plano:** não há checkpoints no Google Drive. Com as previsões do teste
+  salvas, os pesos não são necessários depois; se a sessão cair, o custo é rodar de novo.
+- **Limitação:** treino em GPU não é determinístico bit a bit; uma nova execução pode variar um pouco.

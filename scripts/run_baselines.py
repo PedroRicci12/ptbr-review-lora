@@ -8,7 +8,9 @@ Baselines:
     tfidf_lr  TF-IDF (word 1-2 grams) + logistic regression, in 4 variants:
               input = text or title + text; class weights = none or balanced
 
-Output: reports/baselines_dev.json (metrics only, no text).
+Outputs:
+    reports/baselines_dev.json       metrics only, no text
+    predictions/dev/<baseline>.csv   one predicted label per dev row, for later comparisons
 """
 
 from __future__ import annotations
@@ -18,10 +20,8 @@ import time
 from pathlib import Path
 
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import make_pipeline
 
+from ptbr_review_lora.baselines import LR_PARAMS, TFIDF_PARAMS, make_tfidf_lr
 from ptbr_review_lora.data import model_input
 from ptbr_review_lora.metrics import (
     bootstrap_ci,
@@ -29,17 +29,15 @@ from ptbr_review_lora.metrics import (
     neutral_recall_by_group,
     paired_bootstrap,
 )
+from ptbr_review_lora.predictions import save_predictions
 
 ROOT = Path(__file__).resolve().parents[1]
 PROCESSED = ROOT / "data" / "processed"
 REPORT = ROOT / "reports" / "baselines_dev.json"
+PREDICTIONS = ROOT / "predictions" / "dev"
 
 SEED = 42
 N_RESAMPLES = 1000
-
-# Fixed, not tuned: the point is a reasonable classical baseline, not the best possible one.
-TFIDF_PARAMS = {"ngram_range": (1, 2), "min_df": 2, "sublinear_tf": True}
-LR_PARAMS = {"max_iter": 1000, "C": 1.0}
 
 VARIANTS = {
     "tfidf_lr__text": {"use_title": False, "class_weight": None},
@@ -74,10 +72,7 @@ def main() -> None:
 
     for name, cfg in VARIANTS.items():
         start = time.perf_counter()
-        model = make_pipeline(
-            TfidfVectorizer(**TFIDF_PARAMS),
-            LogisticRegression(class_weight=cfg["class_weight"], **LR_PARAMS),
-        )
+        model = make_tfidf_lr(cfg["class_weight"])
         model.fit(model_input(pool, cfg["use_title"]), pool["label"])
         predictions[name] = model.predict(model_input(dev, cfg["use_title"])).tolist()
         results[name] = {
@@ -105,6 +100,9 @@ def main() -> None:
         "results": results,
         "paired_comparisons": comparisons,
     }
+    for name, preds in predictions.items():
+        save_predictions(PREDICTIONS / f"{name}.csv", preds)
+
     REPORT.parent.mkdir(parents=True, exist_ok=True)
     REPORT.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"saved {REPORT.relative_to(ROOT)}")
