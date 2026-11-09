@@ -134,3 +134,53 @@ Formato inspirado em ADRs (Architecture Decision Records).
 - **Não tratado:** quase-duplicatas (texto com pequenas diferenças). Ficam como limitação.
   Também há 2 pares (revisor, produto) com avaliações diferentes no dev e no teste;
   efeito considerado desprezível.
+
+## D10 — Métrica principal: macro-F1
+
+- **Data:** 2026-11-06 (Etapa 3)
+- **Decisão:** macro-F1 sobre as 3 classes; uma classe nunca prevista conta como F1 = 0.
+  Secundárias: acurácia, F1 por classe, matriz de confusão e recall do neutro separado em
+  "neutro puro" e "misto".
+- **Alternativas:** acurácia e F1 ponderado (favorecem as classes grandes, e a distribuição do
+  teste é artificial); kappa de Cohen / MCC (corretas, mas mais difíceis de comunicar).
+- **Correção em relação ao plano:** o plano falava em "F1 do neutro por subgrupo". F1 por subgrupo
+  não é bem definido (um falso `neutro` não pertence a nenhum subgrupo), então reportamos recall.
+
+## D11 — Incerteza: bootstrap pareado
+
+- **Data:** 2026-11-06 (Etapa 3)
+- **Decisão:** intervalo de 95% por bootstrap de percentis (1.000 reamostras, seed 42) para cada
+  modelo, e bootstrap **pareado** para comparar dois modelos (mesmos índices para os dois).
+- **Alternativa:** comparar os intervalos individuais. Menos sensível, porque ignora que os dois
+  modelos erram em exemplos parecidos.
+
+## D12 — O teste só é usado na Etapa 6
+
+- **Data:** 2026-11-06 (Etapa 3)
+- **Decisão:** baselines, LLM base e LLM ajustado são avaliados no teste uma única vez, juntos,
+  com as configurações já congeladas. Até lá, todas as escolhas usam só o dev.
+
+## D13 — Baselines e configuração escolhida no dev
+
+- **Data:** 2026-11-06 (Etapa 3)
+- **Decisão:** baselines = classe majoritária, TF-IDF + regressão logística e, numa Etapa 3b,
+  BERTimbau ajustado (GPU, Colab).
+- **Hiperparâmetros fixos (não ajustados):** TF-IDF de 1–2 gramas, `min_df=2`, `sublinear_tf`;
+  regressão logística com `C=1`.
+- **Resultados no dev (medidos, 2.000 avaliações; IC de 95%):**
+
+  | Modelo | Macro-F1 | IC 95% | Acurácia | F1 neutro | Recall neutro puro | Recall misto |
+  |---|---|---|---|---|---|---|
+  | Majoritária (`positivo`) | 0,195 | 0,187–0,202 | 0,413 | 0,000 | 0,000 | 0,000 |
+  | TF-IDF, texto | 0,672 | 0,651–0,693 | 0,765 | 0,323 | 0,073 | 0,233 |
+  | TF-IDF, texto, balanceado | 0,740 | 0,720–0,759 | 0,772 | 0,532 | 0,378 | 0,533 |
+  | TF-IDF, título + texto | 0,702 | 0,680–0,724 | 0,783 | 0,380 | 0,098 | 0,293 |
+  | **TF-IDF, título + texto, balanceado** | **0,762** | 0,741–0,779 | 0,793 | 0,560 | 0,427 | 0,553 |
+
+- **Comparação pareada contra "TF-IDF, texto" (diferença de macro-F1, IC 95%):**
+  balanceado +0,068 (0,048–0,089); título +0,030 (0,015–0,045); título + balanceado +0,090
+  (0,068–0,110). Nenhuma das 1.000 reamostras teve diferença ≤ 0 nesses três casos.
+- **Escolha:** entrada = **título + texto**, com **pesos balanceados**. Vale também para os
+  próximos modelos (o título ajuda e o neutro é sub-representado no treino).
+- **Cuidado:** como a configuração foi escolhida olhando o dev, o 0,762 é otimista; o número
+  que vale é o do teste, na Etapa 6.

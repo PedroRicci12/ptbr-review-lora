@@ -6,8 +6,8 @@ Fine-tuning com QLoRA de um LLM aberto pequeno (1B–3B parâmetros) para classi
 em português do Brasil como **negativa**, **neutra** ou **positiva**, comparado com o modelo
 base e com baselines mais simples.
 
-> **Status:** em andamento — Etapa 2 (dados) concluída. Nenhum modelo foi treinado ainda
-> e não há resultados.
+> **Status:** em andamento — Etapa 3 (avaliação e baselines clássicas) concluída.
+> Nenhum LLM foi treinado ainda. Todos os números abaixo são do dev; o teste ainda não foi usado.
 
 ## Objetivo
 
@@ -35,6 +35,15 @@ classificação de sentimento em pt-BR em relação a:
 
 Contagens por split: [reports/data_summary.json](reports/data_summary.json).
 Justificativas: decisões D5–D9 em [docs/decisions.md](docs/decisions.md).
+
+## Avaliação
+
+- **Métrica principal:** macro-F1 sobre as 3 classes. Secundárias: acurácia, F1 por classe,
+  matriz de confusão e recall do `neutro` separado em neutro puro e misto.
+- **Incerteza:** bootstrap de percentis com 95% (1.000 reamostras); modelos são comparados com
+  bootstrap pareado nas mesmas reamostras.
+- **Protocolo:** toda escolha é feita no dev. O teste é usado uma única vez, no fim, para todos
+  os modelos congelados juntos.
 
 ## Estrutura do repositório
 
@@ -72,11 +81,31 @@ Baixar (~55 MB, com versão fixada e checksum verificado) e preparar os dados:
 uv run python scripts/prepare_data.py
 ```
 
+Treinar as baselines clássicas e avaliá-las no dev (~2 minutos na CPU de um notebook):
+
+```bash
+uv run python scripts/run_baselines.py
+```
+
 O treino em GPU roda no Google Colab ou no Kaggle; os notebooks entram na Etapa 5.
 
 ## Resultados
 
-Ainda não há. Todo número desta seção virá de uma execução real, com o notebook que o gerou.
+Os resultados finais (no teste) ainda não existem. Todo número desta seção vem de uma execução
+real, com o script ou notebook que o gerou.
+
+**Baselines clássicas no dev** (2.000 avaliações; de
+[reports/baselines_dev.json](reports/baselines_dev.json)):
+
+| Modelo | Macro-F1 (IC 95%) | Acurácia |
+|---|---|---|
+| Classe majoritária (`positivo`) | 0,195 (0,187–0,202) | 0,413 |
+| TF-IDF + regressão logística, texto | 0,672 (0,651–0,693) | 0,765 |
+| TF-IDF + RL, título + texto, pesos balanceados | **0,762** (0,741–0,779) | 0,793 |
+
+Incluir o título e balancear os pesos das classes ajudou (bootstrap pareado, IC de 95% da
+diferença acima de zero). A configuração escolhida foi selecionada no dev, então o número dela
+no dev é otimista. Tabela completa: decisão D13 em [docs/decisions.md](docs/decisions.md).
 
 ## Limitações
 
@@ -87,6 +116,7 @@ Serão documentadas ao longo do projeto. Já conhecida desde o início:
   então a acurácia não reflete o tráfego real; a métrica principal é o macro-F1.
 - Domínio: avaliações de produtos de e-commerce de 2018, não de restaurantes ou delivery.
 - Só duplicatas exatas de texto entre treino e avaliação foram removidas; quase-duplicatas não.
+- Os hiperparâmetros do TF-IDF foram fixados, não ajustados: a baseline clássica é razoável, mas não ótima.
 
 ## Aprendizados
 
@@ -104,6 +134,10 @@ Preenchidos ao final de cada etapa.
   original no GitHub. A descrição da fonte sugeria separador `;`, mas o arquivo usa `,`: ler o
   cabeçalho resolveu. Remover o RePro do pool de treino pelo ID também não bastou: 92 textos do
   RePro ainda apareciam idênticos no pool (provavelmente a mesma avaliação publicada para produtos diferentes).
+- **Etapa 3 — uma baseline barata define a régua.** TF-IDF + regressão logística, treinada em
+  ~25 s, chega a 0,762 de macro-F1 no dev, e seus 79% de acurácia já superam os 74% de
+  concordância entre estrelas e rótulos humanos. O que mais pesou foi balancear os pesos das
+  classes: o recall do neutro puro subiu de 7% para 38%, porque o neutro é 12% do treino e 24% da avaliação.
 
 ## Licença
 

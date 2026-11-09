@@ -124,6 +124,14 @@ def remove_text_duplicates(b2w: pd.DataFrame, repro: pd.DataFrame) -> tuple[pd.D
     return b2w.loc[~duplicated].reset_index(drop=True), int(duplicated.sum())
 
 
+def model_input(df: pd.DataFrame, use_title: bool) -> pd.Series:
+    """Text given to a model: the review text, optionally preceded by its title ("title. text")."""
+    if not use_title:
+        return df["review_text"]
+    title = df["review_title"].fillna("").str.strip()
+    return (title + ". " + df["review_text"]).where(title != "", df["review_text"])
+
+
 def split_repro(
     repro: pd.DataFrame, dev_size: int = 2000, seed: int = 42
 ) -> tuple[pd.DataFrame, pd.DataFrame]:

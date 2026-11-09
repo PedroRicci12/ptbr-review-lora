@@ -4,6 +4,7 @@ import pytest
 from ptbr_review_lora.data import (
     PERSONAL_COLUMNS,
     git_blob_sha,
+    model_input,
     polarity_group,
     prepare_b2w,
     prepare_repro,
@@ -106,6 +107,14 @@ def test_remove_text_duplicates_ignores_case_and_edge_spaces():
     clean, removed = remove_text_duplicates(b2w, repro)
     assert removed == 2
     assert list(clean["reviewer_id"]) == ["r3"]
+
+
+def test_model_input_with_and_without_title():
+    df = pd.DataFrame(
+        {"review_title": ["Ótimo", None, "  "], "review_text": ["Chegou rápido", "Bom", "Ruim"]}
+    )
+    assert list(model_input(df, use_title=False)) == ["Chegou rápido", "Bom", "Ruim"]
+    assert list(model_input(df, use_title=True)) == ["Ótimo. Chegou rápido", "Bom", "Ruim"]
 
 
 def make_repro(n_per_group: int) -> pd.DataFrame:
