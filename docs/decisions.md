@@ -99,6 +99,8 @@ Formato inspirado em ADRs (Architecture Decision Records).
   Com 2.000 exemplos, o dev tem ~80 neutros puros (estimativa pela proporção do RePro).
 - **Resultado (medido):** dev = 825 positivo, 690 negativo, 403 misto, 82 neutro puro;
   teste = 3.302 positivo, 2.759 negativo, 1.615 misto, 327 neutro puro.
+- **Atualização (Etapa 5, D16):** para o fine-tuning com rótulos humanos, o dev foi dividido em
+  1.500 de treino e 500 de seleção. O teste continua intocado.
 
 ## D8 — Mapeamento estrelas → classe confirmado no dev
 
@@ -309,3 +311,41 @@ Formato inspirado em ADRs (Architecture Decision Records).
     - Hipótese (não testada) para o LLM sem ajuste superar os modelos treinados: TF-IDF e BERTimbau
       aprenderam com rótulos de estrelas, que concordam com os humanos em só 74%; o LLM segue a
       definição da instrução, mais próxima da anotação humana do RePro.
+
+## D16 — Etapa 5: QLoRA com rótulos de estrelas (A) e com rótulos humanos (B)
+
+- **Data:** 2026-11-10 (Etapa 5)
+- **Motivo para dois treinos:** o ruído das estrelas é sistemático, não aleatório. Medido no dev:
+
+  | Estrelas → rótulo | Humano: negativo | neutro | positivo | Acerto |
+  |---|---|---|---|---|
+  | 1–2 → negativo | 619 | 193 | 9 | 75% |
+  | 3 → neutro | 66 | 184 | 132 | **48%** |
+  | 4–5 → positivo | 5 | 108 | 684 | 86% |
+
+  Avaliações de 3 estrelas são positivas para os humanos em 35% dos casos, e o maior erro do
+  BERTimbau (treinado com estrelas) foi justamente positivo → neutro. Inversões negativo ↔ positivo
+  são raras (14). O RePro sorteou ~2.000 avaliações por nota, então essas taxas valem para uma
+  amostra equilibrada por estrelas, não para o pool.
+- **Decisão (escolhida por Pedro): treinar os dois e comparar** — "muitos rótulos ruidosos ou
+  poucos rótulos limpos?"
+  - **A (estrelas):** 15.000 avaliações do pool, 5.000 por classe, 1 época. Mesma fonte das
+    baselines, então a comparação com elas é direta.
+  - **B (humanos):** 1.500 avaliações do dev (`split_dev`, estratificado pelos 4 grupos, seed 42),
+    todas, sem balancear (364 neutros, dos quais 302 mistos). Número de épocas decidido depois
+    do piloto de velocidade.
+  - Alternativa descartada: filtrar o pool pelo próprio SmolLM3 (circular).
+- **Seleção e comparação no dev:** nas **500 avaliações restantes** do dev (206 positivo,
+  173 negativo, 101 misto, 20 neutro puro). TF-IDF, BERTimbau e zero-shot são recalculados nessas
+  mesmas linhas, a partir das previsões salvas. Custo: IC cerca de 2× mais largo (~±0,04) e só 20
+  neutros puros, então o recall do neutro puro nesse conjunto é muito instável. O teste (8.003)
+  continua sendo a avaliação final.
+- **Formato:** o mesmo prompt do zero-shot (Etapa 4) + rótulo e fim de turno como resposta. A perda
+  é só nos tokens da resposta (`build_example`); o prompt e o padding ficam com -100.
+- **QLoRA (escolhido por Pedro, padrão do artigo do QLoRA, não ajustado):** base em 4 bits NF4 com
+  double quantization, cálculo em fp16 (T4); LoRA em todas as camadas lineares, r 16, alpha 32,
+  dropout 0,05; lr 2e-4, warmup 3%, decaimento linear, batch efetivo 16.
+- **Checkpoints (escolhido por Pedro):** avaliação nas 500 de seleção em 25%, 50%, 75% e 100% do
+  treino; fica o melhor. O passo 0 é o zero-shot.
+- **Piloto:** o notebook mede a velocidade em poucos passos antes do treino; se A passar de ~3 h,
+  o tamanho é reduzido.

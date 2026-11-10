@@ -140,3 +140,18 @@ def split_repro(
         repro, train_size=dev_size, stratify=repro["polarity_group"], random_state=seed
     )
     return dev.reset_index(drop=True), test.reset_index(drop=True)
+
+
+def split_dev(
+    dev: pd.DataFrame, train_size: int = 1500, seed: int = 42
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Split dev into human-labeled training data and a selection set (decision D16).
+
+    Stratified by the 4 polarity groups. The original dev index is kept (it is the `row` of the
+    dev prediction files), so earlier models can be re-scored on exactly the selection rows.
+    The test set is not touched.
+    """
+    train, select = train_test_split(
+        dev, train_size=train_size, stratify=dev["polarity_group"], random_state=seed
+    )
+    return train.sort_index(), select.sort_index()
