@@ -266,4 +266,13 @@ Formato inspirado em ADRs (Architecture Decision Records).
 - **Teste:** como na TF-IDF, a configuração (zero-shot ou 6-shot) é escolhida no dev; só a escolhida
   gera previsões do teste, sem métricas (D12).
 - **Precisão numérica:** a T4 não suporta bf16, então a inferência roda em fp16; problemas
-  numéricos são um risco a medir, não a supor.
+  numéricos são um risco a medir, não a supor. O notebook para se alguma pontuação não for finita.
+- **Implementação da pontuação (escolhida por Pedro): simples, 3 passadas por avaliação**
+  (prompt + cada rótulo). Alternativa: reaproveitar o KV cache do prompt para os 3 rótulos
+  (~1/3 do tempo, estimativa não medida), descartada por ter mais código e mais pontos de erro.
+  Duas otimizações sem mudar o resultado: a camada de saída só é aplicada nas posições que preveem
+  tokens dos rótulos, e o notebook confere em 4 avaliações que esse atalho bate com o cálculo
+  direto (`model(...).logits`).
+- **Reprodutibilidade do prompt:** o chat template do SmolLM3 escreve a data de hoje no prompt de
+  sistema; a flag `/system_override` do próprio template remove isso, deixando só a instrução.
+- **Revisão fixada:** `a07cc9a04f16550a088caea529712d1d335b0ac1` (pesos em safetensors).

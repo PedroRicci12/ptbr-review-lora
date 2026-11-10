@@ -98,6 +98,11 @@ Fine-tune the BERTimbau baseline (GPU) with
 
 Unzip the results at the repository root: the files land in `reports/` and `predictions/`.
 
+Evaluate the base LLM (SmolLM3-3B, zero-shot and 6-shot, GPU) with
+[notebooks/04_base_llm.ipynb](notebooks/04_base_llm.ipynb), on Colab
+([open in Colab](https://colab.research.google.com/github/PedroRicci12/ptbr-review-lora/blob/main/notebooks/04_base_llm.ipynb))
+or Kaggle, the same way; it produces `smollm3_base_results.zip`.
+
 ## Results
 
 Final (test set) results are not available yet. Every number in this section comes from an

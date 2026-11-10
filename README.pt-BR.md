@@ -98,6 +98,11 @@ Ajustar a baseline BERTimbau (GPU) com
 
 Descompacte os resultados na raiz do repositório: os arquivos vão para `reports/` e `predictions/`.
 
+Avaliar o LLM base (SmolLM3-3B, zero-shot e 6-shot, GPU) com
+[notebooks/04_base_llm.ipynb](notebooks/04_base_llm.ipynb), no Colab
+([abrir no Colab](https://colab.research.google.com/github/PedroRicci12/ptbr-review-lora/blob/main/notebooks/04_base_llm.ipynb))
+ou no Kaggle, do mesmo jeito; ele gera o `smollm3_base_results.zip`.
+
 ## Resultados
 
 Os resultados finais (no teste) ainda não existem. Todo número desta seção vem de uma execução
