@@ -233,3 +233,37 @@ Formato inspirado em ADRs (Architecture Decision Records).
     e só 2 negativos como positivo.
   - **Cuidado:** a época foi escolhida pelo dev, então o 0,787 é otimista, como o 0,762 da TF-IDF.
     As previsões do teste (8.003) foram salvas sem calcular métricas (D12).
+
+## D15 — Etapa 4: LLM base sem fine-tuning (zero-shot e few-shot)
+
+- **Data:** 2026-11-10 (Etapa 4)
+- **Modelo (escolhido por Pedro):** `HuggingFaceTB/SmolLM3-3B` (Apache 2.0, sem gate). Português é
+  um dos 6 idiomas suportados oficialmente; arquitetura só de texto, o caminho mais testado para
+  QLoRA na Etapa 5; dados e receita de treino públicos.
+  - Alternativas: Qwen3-1.7B (Apache 2.0, mas o card não cita português), Qwen3.5-2B (multimodal e
+    com atenção híbrida, suporte a QLoRA menos testado), Llama-3.2-3B (licença exige "Llama" no nome
+    de modelos derivados), Gemma-3-1B (notas multilíngues baixas no card), Tucano 2 (licença dos
+    pesos não verificada).
+- **Como extrair o rótulo (escolhido por Pedro):**
+  - **Principal — pontuar os rótulos:** para cada avaliação, soma-se a log-probabilidade dos tokens
+    de cada rótulo como resposta do assistente e fica o maior. Toda previsão é válida, é
+    determinística e mede só a classificação, não a obediência ao formato. O modelo ajustado da
+    Etapa 5 será medido do mesmo jeito.
+  - **Secundário (só dev) — gerar e interpretar:** `parse_label` aceita variações ("Negativa.",
+    "é neutra") e devolve "inválido" se a resposta não cita nenhum rótulo ou cita mais de um.
+    Registra-se a taxa de respostas fora do formato.
+  - Viés conhecido da pontuação: rótulos com mais tokens somam mais log-probabilidades negativas.
+    Depois do primeiro token o resto da palavra costuma ser quase certo, então o efeito deve ser
+    pequeno; não foi medido.
+- **Prompts (escolhido por Pedro):** zero-shot e 6-shot (2 por classe).
+  - Exemplos sorteados com seed 42 **do pool de treino da B2W** (nunca do dev ou do teste), só
+    entre avaliações de até 280 caracteres, em ordem embaralhada; os mesmos 6 para todas as
+    avaliações. O relatório guarda os índices no pool, não os textos.
+  - Os rótulos do pool vêm das estrelas, então algum exemplo pode estar com rótulo errado.
+- **Instrução:** define `neutro` incluindo avaliações com pontos positivos e negativos ao mesmo
+  tempo. É a definição da tarefa (D6), não um vazamento do teste.
+- **Modo *thinking* desligado:** não serve para pontuar rótulos e multiplica o custo.
+- **Teste:** como na TF-IDF, a configuração (zero-shot ou 6-shot) é escolhida no dev; só a escolhida
+  gera previsões do teste, sem métricas (D12).
+- **Precisão numérica:** a T4 não suporta bf16, então a inferência roda em fp16; problemas
+  numéricos são um risco a medir, não a supor.
