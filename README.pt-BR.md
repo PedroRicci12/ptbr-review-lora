@@ -6,7 +6,7 @@ Fine-tuning com QLoRA de um LLM aberto pequeno (1B–3B parâmetros) para classi
 em português do Brasil como **negativa**, **neutra** ou **positiva**, comparado com o modelo
 base e com baselines mais simples.
 
-> **Status:** em andamento — Etapa 3 (avaliação e baselines clássicas) concluída.
+> **Status:** em andamento — Etapa 3 (avaliação e baselines, incluindo o BERTimbau ajustado) concluída.
 > Nenhum LLM foi treinado ainda. Todos os números abaixo são do dev; o teste ainda não foi usado.
 
 ## Objetivo
@@ -103,18 +103,26 @@ Descompacte os resultados na raiz do repositório: os arquivos vão para `report
 Os resultados finais (no teste) ainda não existem. Todo número desta seção vem de uma execução
 real, com o script ou notebook que o gerou.
 
-**Baselines clássicas no dev** (2.000 avaliações; de
-[reports/baselines_dev.json](reports/baselines_dev.json)):
+**Baselines no dev** (2.000 avaliações; de
+[reports/baselines_dev.json](reports/baselines_dev.json) e
+[reports/bertimbau_dev.json](reports/bertimbau_dev.json)):
 
-| Modelo | Macro-F1 (IC 95%) | Acurácia |
-|---|---|---|
-| Classe majoritária (`positivo`) | 0,195 (0,187–0,202) | 0,413 |
-| TF-IDF + regressão logística, texto | 0,672 (0,651–0,693) | 0,765 |
-| TF-IDF + RL, título + texto, pesos balanceados | **0,762** (0,741–0,779) | 0,793 |
+| Modelo | Macro-F1 (IC 95%) | Acurácia | F1 `neutro` |
+|---|---|---|---|
+| Classe majoritária (`positivo`) | 0,195 (0,187–0,202) | 0,413 | 0,000 |
+| TF-IDF + regressão logística, texto | 0,672 (0,651–0,693) | 0,765 | — |
+| TF-IDF + RL, título + texto, pesos balanceados | 0,762 (0,741–0,779) | 0,793 | 0,560 |
+| BERTimbau base ajustado (1 época, perda balanceada) | **0,787** (0,768–0,804) | 0,807 | 0,621 |
 
-Incluir o título e balancear os pesos das classes ajudou (bootstrap pareado, IC de 95% da
-diferença acima de zero). A configuração escolhida foi selecionada no dev, então o número dela
-no dev é otimista. Tabela completa: decisão D13 em [docs/decisions.md](docs/decisions.md).
+- Incluir o título e balancear os pesos das classes ajudou a TF-IDF (bootstrap pareado, IC de
+  95% da diferença acima de zero).
+- O BERTimbau ajustado supera a melhor TF-IDF em +0,026 de macro-F1 (IC pareado de 95%: +0,009
+  a +0,042), quase tudo no `neutro`. Treinou em ~25 min numa T4 do Kaggle, contra ~25 s da TF-IDF
+  na CPU de um notebook.
+- Uma segunda época baixou a perda de treino, mas também o macro-F1 no dev (0,787 → 0,774),
+  então ficou a época 1.
+- As duas configurações foram escolhidas no dev, então os números delas no dev são otimistas.
+  Detalhes: decisões D13 e D14 em [docs/decisions.md](docs/decisions.md).
 
 ## Limitações
 
@@ -126,6 +134,8 @@ Serão documentadas ao longo do projeto. Já conhecida desde o início:
 - Domínio: avaliações de produtos de e-commerce de 2018, não de restaurantes ou delivery.
 - Só duplicatas exatas de texto entre treino e avaliação foram removidas; quase-duplicatas não.
 - Os hiperparâmetros do TF-IDF foram fixados, não ajustados: a baseline clássica é razoável, mas não ótima.
+- O BERTimbau foi treinado uma vez (uma seed) com hiperparâmetros padrão, não ajustados; treino em
+  GPU não é determinístico bit a bit, então uma nova execução pode variar um pouco. A época foi escolhida no dev.
 
 ## Aprendizados
 
@@ -147,6 +157,12 @@ Preenchidos ao final de cada etapa.
   ~25 s, chega a 0,762 de macro-F1 no dev, e seus 79% de acurácia já superam os 74% de
   concordância entre estrelas e rótulos humanos. O que mais pesou foi balancear os pesos das
   classes: o recall do neutro puro subiu de 7% para 38%, porque o neutro é 12% do treino e 24% da avaliação.
+- **Etapa 3b — um modelo mais forte compra um ganho pequeno e mensurável; a GPU é o gargalo.**
+  O BERTimbau ajustado superou a TF-IDF em 2,6 pontos de macro-F1, com IC do bootstrap pareado
+  excluindo o zero, ao custo de ~60× o tempo de treino. Treinar mais não foi melhor: a época 2
+  baixou a perda de treino, mas também o macro-F1 no dev. O Colab gratuito não tinha GPU, então o
+  notebook passou a rodar também no Kaggle; a checagem dos dados (contagens reconstruídas iguais
+  às do repositório) passou com outra versão do pandas, e é isso que torna confiável rodar em outra plataforma.
 
 ## Licença
 

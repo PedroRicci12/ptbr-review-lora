@@ -6,7 +6,7 @@ QLoRA fine-tuning of a small open LLM (1B–3B parameters) to classify Brazilian
 reviews as **negative**, **neutral** or **positive**, compared against the base model and
 simpler baselines.
 
-> **Status:** work in progress — Stage 3 (evaluation and classical baselines) done.
+> **Status:** work in progress — Stage 3 (evaluation and baselines, including fine-tuned BERTimbau) done.
 > No LLM has been trained yet. All numbers below are on the dev set; the test set is still unused.
 
 ## Goal
@@ -103,18 +103,25 @@ Unzip the results at the repository root: the files land in `reports/` and `pred
 Final (test set) results are not available yet. Every number in this section comes from an
 actual run, with the script or notebook that produced it.
 
-**Classical baselines on dev** (2,000 reviews; from
-[reports/baselines_dev.json](reports/baselines_dev.json)):
+**Baselines on dev** (2,000 reviews; from
+[reports/baselines_dev.json](reports/baselines_dev.json) and
+[reports/bertimbau_dev.json](reports/bertimbau_dev.json)):
 
-| Model | Macro-F1 (95% CI) | Accuracy |
-|---|---|---|
-| Majority class (`positivo`) | 0.195 (0.187–0.202) | 0.413 |
-| TF-IDF + logistic regression, text | 0.672 (0.651–0.693) | 0.765 |
-| TF-IDF + LR, title + text, balanced class weights | **0.762** (0.741–0.779) | 0.793 |
+| Model | Macro-F1 (95% CI) | Accuracy | F1 `neutro` |
+|---|---|---|---|
+| Majority class (`positivo`) | 0.195 (0.187–0.202) | 0.413 | 0.000 |
+| TF-IDF + logistic regression, text | 0.672 (0.651–0.693) | 0.765 | — |
+| TF-IDF + LR, title + text, balanced class weights | 0.762 (0.741–0.779) | 0.793 | 0.560 |
+| BERTimbau base, fine-tuned (1 epoch, balanced loss) | **0.787** (0.768–0.804) | 0.807 | 0.621 |
 
-Adding the title and balancing class weights both helped (paired bootstrap, 95% CI of the
-difference above zero). The chosen configuration was selected on dev, so its dev score is
-optimistic. Full table: decision D13 in [docs/decisions.md](docs/decisions.md).
+- Adding the title and balancing class weights both helped TF-IDF (paired bootstrap, 95% CI of
+  the difference above zero).
+- Fine-tuned BERTimbau beats the best TF-IDF by +0.026 macro-F1 (paired 95% CI +0.009 to
+  +0.042), almost all of it on `neutro`. It trained for ~25 min on a Kaggle T4 vs ~25 s on a
+  laptop CPU for TF-IDF.
+- A second epoch lowered training loss but also dev macro-F1 (0.787 → 0.774), so epoch 1 was kept.
+- Both configurations were selected on dev, so their dev scores are optimistic.
+  Details: decisions D13 and D14 in [docs/decisions.md](docs/decisions.md).
 
 ## Limitations
 
@@ -126,6 +133,8 @@ To be documented as the project progresses. Known from the start:
 - Domain: e-commerce product reviews from 2018, not restaurant or food-delivery reviews.
 - Only exact text duplicates between training and evaluation were removed; near-duplicates were not.
 - TF-IDF hyperparameters were fixed, not tuned, so the classical baseline is reasonable but not optimal.
+- BERTimbau was trained once (one seed) with standard, untuned hyperparameters; GPU training is
+  not bit-for-bit deterministic, so a rerun may differ slightly. Its training epoch was picked on dev.
 
 ## Learnings
 
@@ -147,6 +156,12 @@ To be filled in at the end of each stage.
   reaches 0.762 macro-F1 on dev, and its 79% accuracy is already above the 74% agreement between
   star labels and human labels. Balancing class weights mattered most: it raised recall of
   pure-neutral reviews from 7% to 38%, because neutral is 12% of training but 24% of evaluation.
+- **Stage 3b — a stronger model buys a small, measurable gain; the GPU is the bottleneck.**
+  Fine-tuned BERTimbau beat TF-IDF by 2.6 macro-F1 points, with a paired bootstrap CI that
+  excludes zero, at ~60× the training time. More training was not better: epoch 2 lowered training
+  loss but also dev macro-F1. Free Colab had no GPU available, so the notebook was made to run on
+  Kaggle too; the data check (rebuilt counts must match the repository) passed under a different
+  pandas version, which is what makes the cross-platform run trustworthy.
 
 ## License
 

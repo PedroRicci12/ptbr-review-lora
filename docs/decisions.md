@@ -208,3 +208,28 @@ Formato inspirado em ADRs (Architecture Decision Records).
 - **Mudança em relação ao plano:** não há checkpoints no Google Drive. Com as previsões do teste
   salvas, os pesos não são necessários depois; se a sessão cair, o custo é rodar de novo.
 - **Limitação:** treino em GPU não é determinístico bit a bit; uma nova execução pode variar um pouco.
+- **Resultados (medidos, dev, 2.000 avaliações; `reports/bertimbau_dev.json`):**
+  - Execução: Kaggle, Tesla T4, commit `d0a9765`; pandas 2.3.3 no Kaggle, e a checagem de
+    `data_summary.json` passou, então os dados são os mesmos do notebook local (pandas 3.1.1).
+  - `MAX_LEN` = 128 (cobre 97,2% da amostra; mediana 32 tokens, p95 103, p99 184).
+  - Treino: 1.478 s (~25 min) para as 2 épocas.
+
+    | Época | Perda de treino | Macro-F1 dev |
+    |---|---|---|
+    | 1 | 0,487 | **0,787** |
+    | 2 | 0,376 | 0,774 |
+
+  - Melhor época: 1. A segunda baixou a perda de treino mas piorou o dev (resultado negativo
+    registrado). Hipótese não testada: com rótulos de estrelas ruidosos (74% de concordância
+    com humanos), treinar mais ajusta o modelo ao ruído. A diferença entre as épocas também pode
+    ser variação normal; não foi medida com bootstrap.
+  - Macro-F1 **0,787** (IC 95% 0,768–0,804), acurácia 0,807. F1 por classe: negativo 0,889,
+    neutro 0,621, positivo 0,852. Recall do neutro: puro 0,585, misto 0,663.
+  - Contra a melhor TF-IDF (0,762): diferença **+0,026** (IC 95% +0,009 a +0,042), `p_b_not_better`
+    0,001 (bootstrap pareado). Os dois modelos concordam em 88% das previsões do dev.
+  - O ganho veio quase todo do neutro (F1 0,560 → 0,621; recall do neutro puro 0,427 → 0,585);
+    positivo ficou igual (0,851 → 0,852).
+  - Maior erro: 163 positivos previstos como neutro. Nenhum positivo foi previsto como negativo,
+    e só 2 negativos como positivo.
+  - **Cuidado:** a época foi escolhida pelo dev, então o 0,787 é otimista, como o 0,762 da TF-IDF.
+    As previsões do teste (8.003) foram salvas sem calcular métricas (D12).
