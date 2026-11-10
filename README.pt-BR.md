@@ -103,6 +103,11 @@ Avaliar o LLM base (SmolLM3-3B, zero-shot e 6-shot, GPU) com
 ([abrir no Colab](https://colab.research.google.com/github/PedroRicci12/ptbr-review-lora/blob/main/notebooks/04_base_llm.ipynb))
 ou no Kaggle, do mesmo jeito; ele gera o `smollm3_base_results.zip`.
 
+Fazer o fine-tuning do SmolLM3-3B com QLoRA (GPU) com [notebooks/05_qlora.ipynb](notebooks/05_qlora.ipynb),
+uma vez por conjunto de treino: ajuste `TRAINING_SET = "stars"` ou `"human"` na célula de configuração.
+Cada execução gera o `qlora_<set>_results.zip` (descompacte na raiz do repositório) e o
+`qlora_<set>_adapter.zip` (pesos do LoRA; guarde fora do repositório).
+
 ## Resultados
 
 Os resultados finais (no teste) ainda não existem. Todo número desta seção vem de uma execução

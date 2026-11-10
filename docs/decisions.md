@@ -347,5 +347,13 @@ Formato inspirado em ADRs (Architecture Decision Records).
   dropout 0,05; lr 2e-4, warmup 3%, decaimento linear, batch efetivo 16.
 - **Checkpoints (escolhido por Pedro):** avaliação nas 500 de seleção em 25%, 50%, 75% e 100% do
   treino; fica o melhor. O passo 0 é o zero-shot.
-- **Piloto:** o notebook mede a velocidade em poucos passos antes do treino; se A passar de ~3 h,
-  o tamanho é reduzido.
+- **Piloto:** o notebook mede a velocidade nos 10 primeiros passos e **para** se o treino estimado
+  passar de 3 h; nada é reduzido automaticamente.
+- **Épocas do B (escolhido por Pedro): 3** (~280 passos). Os checkpoints cobrem o risco de treinar
+  demais.
+- **Implementação:** um notebook (`05_qlora.ipynb`) rodado uma vez por treino (`TRAINING_SET`),
+  para que uma falha não perca o outro e cada execução seja mais curta. Exemplos com mais de 512
+  tokens são descartados do treino (contados no relatório). O melhor checkpoint é escolhido entre
+  os treinados (25–100%); o passo 0 (modelo base em 4 bits) fica como referência e mostra o custo
+  da quantização em relação ao zero-shot em fp16. As previsões das 500 de seleção ficam em
+  `predictions/dev_select/`; o adapter é salvo fora do git, para a Etapa 8.
