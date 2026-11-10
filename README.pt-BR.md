@@ -6,8 +6,8 @@ Fine-tuning com QLoRA de um LLM aberto pequeno (1B–3B parâmetros) para classi
 em português do Brasil como **negativa**, **neutra** ou **positiva**, comparado com o modelo
 base e com baselines mais simples.
 
-> **Status:** em andamento — Etapa 3 (avaliação e baselines, incluindo o BERTimbau ajustado) concluída.
-> Nenhum LLM foi treinado ainda. Todos os números abaixo são do dev; o teste ainda não foi usado.
+> **Status:** em andamento — Etapa 4 (LLM base, zero-shot e few-shot) concluída.
+> Nenhum LLM passou por fine-tuning ainda. Todos os números abaixo são do dev; o teste ainda não foi usado.
 
 ## Objetivo
 
@@ -108,16 +108,26 @@ ou no Kaggle, do mesmo jeito; ele gera o `smollm3_base_results.zip`.
 Os resultados finais (no teste) ainda não existem. Todo número desta seção vem de uma execução
 real, com o script ou notebook que o gerou.
 
-**Baselines no dev** (2.000 avaliações; de
-[reports/baselines_dev.json](reports/baselines_dev.json) e
-[reports/bertimbau_dev.json](reports/bertimbau_dev.json)):
+**Resultados no dev** (2.000 avaliações; de
+[reports/baselines_dev.json](reports/baselines_dev.json),
+[reports/bertimbau_dev.json](reports/bertimbau_dev.json) e
+[reports/smollm3_base_dev.json](reports/smollm3_base_dev.json)):
 
 | Modelo | Macro-F1 (IC 95%) | Acurácia | F1 `neutro` |
 |---|---|---|---|
 | Classe majoritária (`positivo`) | 0,195 (0,187–0,202) | 0,413 | 0,000 |
 | TF-IDF + regressão logística, texto | 0,672 (0,651–0,693) | 0,765 | — |
 | TF-IDF + RL, título + texto, pesos balanceados | 0,762 (0,741–0,779) | 0,793 | 0,560 |
-| BERTimbau base ajustado (1 época, perda balanceada) | **0,787** (0,768–0,804) | 0,807 | 0,621 |
+| BERTimbau base ajustado (1 época, perda balanceada) | 0,787 (0,768–0,804) | 0,807 | 0,621 |
+| SmolLM3-3B sem fine-tuning, 6-shot | 0,760 (0,740–0,778) | 0,801 | 0,535 |
+| SmolLM3-3B sem fine-tuning, zero-shot | **0,815** (0,795–0,833) | 0,851 | 0,638 |
+
+- O LLM base em zero-shot supera o BERTimbau ajustado em +0,028 de macro-F1 (IC pareado de 95%:
+  +0,007 a +0,050). Colocar 6 exemplos no prompt piorou (−0,055), então ficou o zero-shot.
+- Pontuar os rótulos e gerar a resposta concordam em 99,85% das avaliações; 0% das respostas
+  geradas foram inválidas.
+- Cuidado: a B2W e o RePro são públicos, então podem estar nos dados de pré-treino do SmolLM3
+  (não verificado); isso inflaria o resultado do zero-shot.
 
 - Incluir o título e balancear os pesos das classes ajudou a TF-IDF (bootstrap pareado, IC de
   95% da diferença acima de zero).
@@ -141,6 +151,8 @@ Serão documentadas ao longo do projeto. Já conhecida desde o início:
 - Os hiperparâmetros do TF-IDF foram fixados, não ajustados: a baseline clássica é razoável, mas não ótima.
 - O BERTimbau foi treinado uma vez (uma seed) com hiperparâmetros padrão, não ajustados; treino em
   GPU não é determinístico bit a bit, então uma nova execução pode variar um pouco. A época foi escolhida no dev.
+- Possível contaminação: os dois datasets são públicos, e não foi verificado se estão nos dados de
+  pré-treino do SmolLM3. O few-shot foi avaliado com um único sorteio de 6 exemplos.
 
 ## Aprendizados
 
@@ -168,6 +180,12 @@ Preenchidos ao final de cada etapa.
   baixou a perda de treino, mas também o macro-F1 no dev. O Colab gratuito não tinha GPU, então o
   notebook passou a rodar também no Kaggle; a checagem dos dados (contagens reconstruídas iguais
   às do repositório) passou com outra versão do pandas, e é isso que torna confiável rodar em outra plataforma.
+- **Etapa 4 — medir o modelo base antes de ajustá-lo; ele pode ser a baseline mais forte.**
+  O SmolLM3-3B, só com uma instrução, superou todos os modelos treinados no dev, e colocar exemplos
+  no prompt piorou o resultado, o contrário da intuição comum. Ler o chat template também fez
+  diferença: por padrão ele escreve a data de hoje no prompt, o que quebra a reprodutibilidade sem
+  avisar. Pontuar os rótulos e gerar a resposta deram previsões quase idênticas, então, para este
+  modelo, o formato da resposta não foi problema.
 
 ## Licença
 

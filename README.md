@@ -6,8 +6,8 @@ QLoRA fine-tuning of a small open LLM (1B–3B parameters) to classify Brazilian
 reviews as **negative**, **neutral** or **positive**, compared against the base model and
 simpler baselines.
 
-> **Status:** work in progress — Stage 3 (evaluation and baselines, including fine-tuned BERTimbau) done.
-> No LLM has been trained yet. All numbers below are on the dev set; the test set is still unused.
+> **Status:** work in progress — Stage 4 (base LLM, zero-shot and few-shot) done.
+> No LLM has been fine-tuned yet. All numbers below are on the dev set; the test set is still unused.
 
 ## Goal
 
@@ -108,16 +108,25 @@ or Kaggle, the same way; it produces `smollm3_base_results.zip`.
 Final (test set) results are not available yet. Every number in this section comes from an
 actual run, with the script or notebook that produced it.
 
-**Baselines on dev** (2,000 reviews; from
-[reports/baselines_dev.json](reports/baselines_dev.json) and
-[reports/bertimbau_dev.json](reports/bertimbau_dev.json)):
+**Results on dev** (2,000 reviews; from
+[reports/baselines_dev.json](reports/baselines_dev.json),
+[reports/bertimbau_dev.json](reports/bertimbau_dev.json) and
+[reports/smollm3_base_dev.json](reports/smollm3_base_dev.json)):
 
 | Model | Macro-F1 (95% CI) | Accuracy | F1 `neutro` |
 |---|---|---|---|
 | Majority class (`positivo`) | 0.195 (0.187–0.202) | 0.413 | 0.000 |
 | TF-IDF + logistic regression, text | 0.672 (0.651–0.693) | 0.765 | — |
 | TF-IDF + LR, title + text, balanced class weights | 0.762 (0.741–0.779) | 0.793 | 0.560 |
-| BERTimbau base, fine-tuned (1 epoch, balanced loss) | **0.787** (0.768–0.804) | 0.807 | 0.621 |
+| BERTimbau base, fine-tuned (1 epoch, balanced loss) | 0.787 (0.768–0.804) | 0.807 | 0.621 |
+| SmolLM3-3B, no fine-tuning, 6-shot | 0.760 (0.740–0.778) | 0.801 | 0.535 |
+| SmolLM3-3B, no fine-tuning, zero-shot | **0.815** (0.795–0.833) | 0.851 | 0.638 |
+
+- The base LLM in zero-shot beats fine-tuned BERTimbau by +0.028 macro-F1 (paired 95% CI
+  +0.007 to +0.050). Adding 6 examples to the prompt made it worse (−0.055), so zero-shot was kept.
+- Label scoring and free generation agree on 99.85% of reviews; 0% of generated answers were invalid.
+- Caveat: B2W and RePro are public, so they may be in SmolLM3's pre-training data
+  (not verified); that would inflate the zero-shot score.
 
 - Adding the title and balancing class weights both helped TF-IDF (paired bootstrap, 95% CI of
   the difference above zero).
@@ -140,6 +149,8 @@ To be documented as the project progresses. Known from the start:
 - TF-IDF hyperparameters were fixed, not tuned, so the classical baseline is reasonable but not optimal.
 - BERTimbau was trained once (one seed) with standard, untuned hyperparameters; GPU training is
   not bit-for-bit deterministic, so a rerun may differ slightly. Its training epoch was picked on dev.
+- Possible data contamination: both datasets are public, and SmolLM3's pre-training data was not
+  checked for them. Few-shot was evaluated with a single draw of 6 examples.
 
 ## Learnings
 
@@ -167,6 +178,12 @@ To be filled in at the end of each stage.
   loss but also dev macro-F1. Free Colab had no GPU available, so the notebook was made to run on
   Kaggle too; the data check (rebuilt counts must match the repository) passed under a different
   pandas version, which is what makes the cross-platform run trustworthy.
+- **Stage 4 — measure the base model before fine-tuning it; it can be the strongest baseline.**
+  SmolLM3-3B with only an instruction beat every trained model on dev, and adding examples to the
+  prompt made it worse, which is the opposite of the usual intuition. Reading the chat template
+  also mattered: by default it writes today's date into the prompt, which silently breaks
+  reproducibility. Scoring labels and generating answers gave almost identical predictions, so
+  for this model the answer format was not a problem.
 
 ## License
 

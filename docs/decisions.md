@@ -276,3 +276,36 @@ Formato inspirado em ADRs (Architecture Decision Records).
 - **Reprodutibilidade do prompt:** o chat template do SmolLM3 escreve a data de hoje no prompt de
   sistema; a flag `/system_override` do próprio template remove isso, deixando só a instrução.
 - **Revisão fixada:** `a07cc9a04f16550a088caea529712d1d335b0ac1` (pesos em safetensors).
+- **Resultados (medidos, dev, 2.000 avaliações; `reports/smollm3_base_dev.json`):**
+  - Execução: Kaggle, Tesla T4, fp16, commit `8b1a763`. As checagens passaram: atalho = cálculo
+    direto e nenhuma pontuação não finita, então o fp16 funcionou com este modelo.
+  - Tempo: pontuar o dev levou 340 s (zero-shot) e 1.038 s (6-shot); gerar, 137 s e 398 s;
+    pontuar o teste, 1.377 s. Prompt mediano: 158 tokens (zero-shot) e 480 (6-shot).
+
+    | Configuração | Macro-F1 (IC 95%) | Acurácia | F1 neutro |
+    |---|---|---|---|
+    | Zero-shot, pontuação | **0,815** (0,795–0,833) | 0,851 | 0,638 |
+    | 6-shot, pontuação | 0,760 (0,740–0,778) | 0,801 | 0,535 |
+    | Zero-shot, geração | 0,816 | 0,851 | 0,640 |
+    | 6-shot, geração | 0,760 | 0,800 | 0,536 |
+
+  - **Escolhido: zero-shot.** O 6-shot foi **pior** (−0,055, IC −0,073 a −0,038): resultado
+    negativo registrado. Ele empurrou previsões para `negativo` (neutros previstos como negativo:
+    168 → 218) e tirou positivos do `positivo` (positivos previstos como neutro: 47 → 119).
+    Hipóteses não testadas: os exemplos têm rótulos de estrelas (ruidosos) ou o efeito é deste
+    conjunto específico de 6 exemplos; só um sorteio foi avaliado.
+  - **Geração:** 0% de respostas inválidas e 99,85% de concordância com a pontuação. Só 2 respostas
+    (de 2.000) continuaram depois do rótulo, e o rótulo inicial ainda foi lido corretamente.
+  - **Contra as baselines (bootstrap pareado, zero-shot):** +0,054 sobre a melhor TF-IDF
+    (IC +0,035 a +0,074) e **+0,028 sobre o BERTimbau ajustado** (IC +0,007 a +0,050,
+    `p_b_not_better` 0,004).
+  - Erros: o principal são 168 neutros previstos como negativo; nenhum erro entre positivo e
+    negativo. O BERTimbau erra mais o contrário (positivos previstos como neutro). Os dois
+    concordam em 82% das previsões; 170 avaliações são erradas pelos dois.
+  - **Cuidados:**
+    - o prompt foi escolhido no dev, então o 0,815 é otimista, como os das baselines;
+    - **possível contaminação:** a B2W está pública no GitHub desde 2018 e o RePro no Hugging Face;
+      se estiverem nos dados de pré-treino do SmolLM3, o zero-shot fica inflado. Não foi verificado.
+    - Hipótese (não testada) para o LLM sem ajuste superar os modelos treinados: TF-IDF e BERTimbau
+      aprenderam com rótulos de estrelas, que concordam com os humanos em só 74%; o LLM segue a
+      definição da instrução, mais próxima da anotação humana do RePro.

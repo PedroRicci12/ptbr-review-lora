@@ -1,0 +1,246 @@
+{
+  "model_id": "HuggingFaceTB/SmolLM3-3B",
+  "model_revision": "a07cc9a04f16550a088caea529712d1d335b0ac1",
+  "repo_commit": "8b1a763ac8ab00badf580936ae769aaece01a6d0",
+  "environment": {
+    "platform": "kaggle",
+    "gpu": "Tesla T4",
+    "python": "3.13.16",
+    "torch": "2.11.0+cu130",
+    "transformers": "5.20.2",
+    "scikit_learn": "1.6.1",
+    "pandas": "2.3.3"
+  },
+  "config": {
+    "dtype": "torch.float16",
+    "use_title": true,
+    "few_shot_per_class": 2,
+    "max_new_tokens": 8,
+    "thinking": false,
+    "seed": 42
+  },
+  "few_shot_pool_rows": [
+    62707,
+    46566,
+    79647,
+    95222,
+    38047,
+    21918
+  ],
+  "few_shot_labels": [
+    "negativo",
+    "negativo",
+    "positivo",
+    "neutro",
+    "positivo",
+    "neutro"
+  ],
+  "label_tokens": {
+    "negativo": 2,
+    "neutro": 3,
+    "positivo": 2
+  },
+  "prompt_length_tokens": {
+    "zero_shot": {
+      "50": 158,
+      "95": 234,
+      "100": 865
+    },
+    "6_shot": {
+      "50": 480,
+      "95": 556,
+      "100": 1187
+    }
+  },
+  "seconds": {
+    "score_dev__zero_shot": 340,
+    "score_dev__6_shot": 1038,
+    "generate_dev__zero_shot": 137,
+    "generate_dev__6_shot": 398,
+    "score_test__zero_shot": 1377
+  },
+  "split": "repro_dev",
+  "n": 2000,
+  "n_resamples": 1000,
+  "chosen_prompt": "zero_shot",
+  "results": {
+    "zero_shot": {
+      "method": "label_scoring",
+      "macro_f1": 0.8153958148300989,
+      "accuracy": 0.8505,
+      "f1_per_class": {
+        "negativo": 0.8695652173913043,
+        "neutro": 0.6375757575757576,
+        "positivo": 0.9390464695232348
+      },
+      "confusion_matrix": [
+        [
+          660,
+          30,
+          0
+        ],
+        [
+          168,
+          263,
+          54
+        ],
+        [
+          0,
+          47,
+          778
+        ]
+      ],
+      "macro_f1_ci95": [
+        0.7953485488537719,
+        0.8327782003278424
+      ],
+      "neutral_recall_by_group": {
+        "neutro": 0.6097560975609756,
+        "misto": 0.5285359801488834
+      }
+    },
+    "6_shot": {
+      "method": "label_scoring",
+      "macro_f1": 0.7599899641662399,
+      "accuracy": 0.8005,
+      "f1_per_class": {
+        "negativo": 0.8473717542748576,
+        "neutro": 0.5352112676056338,
+        "positivo": 0.8973868706182282
+      },
+      "confusion_matrix": [
+        [
+          669,
+          20,
+          1
+        ],
+        [
+          218,
+          228,
+          39
+        ],
+        [
+          2,
+          119,
+          704
+        ]
+      ],
+      "macro_f1_ci95": [
+        0.7402633219827054,
+        0.778164994775404
+      ],
+      "neutral_recall_by_group": {
+        "neutro": 0.6707317073170732,
+        "misto": 0.4292803970223325
+      }
+    },
+    "zero_shot__generate": {
+      "method": "generation",
+      "invalid_rate": 0.0,
+      "agreement_with_label_scoring": 0.9985,
+      "macro_f1": 0.8163677615897417,
+      "accuracy": 0.851,
+      "f1_per_class": {
+        "negativo": 0.8693931398416886,
+        "neutro": 0.6400966183574879,
+        "positivo": 0.9396135265700483
+      },
+      "confusion_matrix": [
+        [
+          659,
+          31,
+          0
+        ],
+        [
+          167,
+          265,
+          53
+        ],
+        [
+          0,
+          47,
+          778
+        ]
+      ],
+      "macro_f1_ci95": [
+        0.7969530277157829,
+        0.8332656754716958
+      ],
+      "neutral_recall_by_group": {
+        "neutro": 0.6097560975609756,
+        "misto": 0.533498759305211
+      }
+    },
+    "6_shot__generate": {
+      "method": "generation",
+      "invalid_rate": 0.0,
+      "agreement_with_label_scoring": 0.9985,
+      "macro_f1": 0.759856578581151,
+      "accuracy": 0.8,
+      "f1_per_class": {
+        "negativo": 0.8466413181242078,
+        "neutro": 0.5356725146198831,
+        "positivo": 0.8972559029993619
+      },
+      "confusion_matrix": [
+        [
+          668,
+          21,
+          1
+        ],
+        [
+          218,
+          229,
+          38
+        ],
+        [
+          2,
+          120,
+          703
+        ]
+      ],
+      "macro_f1_ci95": [
+        0.7400335619495267,
+        0.7779524303406178
+      ],
+      "neutral_recall_by_group": {
+        "neutro": 0.6707317073170732,
+        "misto": 0.4317617866004963
+      }
+    }
+  },
+  "most_frequent_answers": {
+    "zero_shot__generate": {
+      "positivo": 831,
+      "negativo": 824,
+      "neutro": 343,
+      "negativo\n\nA avaliação \"pend": 1,
+      "negativo\n\n(Nota: A aval": 1
+    },
+    "6_shot__generate": {
+      "negativo": 888,
+      "positivo": 742,
+      "neutro": 370
+    }
+  },
+  "paired_comparisons": {
+    "6_shot vs zero_shot": {
+      "diff": -0.05540585066385906,
+      "low": -0.07343976014954372,
+      "high": -0.037880073174028014,
+      "p_b_not_better": 1.0
+    },
+    "smollm3_base__zero_shot vs tfidf_lr__title_text__balanced": {
+      "diff": 0.05373341346284011,
+      "low": 0.03504603397546109,
+      "high": 0.07448742534635493,
+      "p_b_not_better": 0.0
+    },
+    "smollm3_base__zero_shot vs bertimbau": {
+      "diff": 0.028204682811380777,
+      "low": 0.00718034514536922,
+      "high": 0.04986277755909487,
+      "p_b_not_better": 0.004
+    }
+  }
+}
