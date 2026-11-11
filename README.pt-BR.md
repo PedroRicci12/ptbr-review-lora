@@ -134,6 +134,25 @@ real, com o script ou notebook que o gerou.
 - Cuidado: a B2W e o RePro são públicos, então podem estar nos dados de pré-treino do SmolLM3
   (não verificado); isso inflaria o resultado do zero-shot.
 
+**Fine-tuning com QLoRA, na parte de seleção do dev (500 avaliações)** (as outras 1.500 do dev são
+o treino da versão com rótulos humanos; de
+[reports/smollm3_qlora_human_select.json](reports/smollm3_qlora_human_select.json)):
+
+| Modelo (mesmas 500 avaliações) | Macro-F1 (IC 95%) | F1 `neutro` |
+|---|---|---|
+| TF-IDF + RL, melhor | 0,762 (0,724–0,796) | 0,554 |
+| BERTimbau ajustado | 0,792 (0,756–0,827) | 0,620 |
+| SmolLM3-3B zero-shot (fp16) | 0,811 (0,775–0,848) | 0,627 |
+| SmolLM3-3B em 4 bits, antes do treino | 0,706 (0,666–0,748) | 0,355 |
+| **SmolLM3-3B + QLoRA, 1.500 rótulos humanos** | **0,899** (0,870–0,927) | **0,822** |
+
+- O QLoRA com 1.500 avaliações rotuladas por humanos soma +0,088 de macro-F1 ao zero-shot (IC
+  pareado de 95%: +0,048 a +0,129), quase tudo no `neutro`. O melhor checkpoint veio com só 70
+  passos (menos de 1 época).
+- Só carregar o modelo em 4 bits custou 0,105 de macro-F1 antes do treino (o neutro quase sumiu).
+- Esse treino aprendeu com rótulos humanos da mesma fonte da avaliação, ao contrário das baselines
+  (rótulos de estrelas); a comparação de igual para igual é o QLoRA com estrelas (pendente).
+
 - Incluir o título e balancear os pesos das classes ajudou a TF-IDF (bootstrap pareado, IC de
   95% da diferença acima de zero).
 - O BERTimbau ajustado supera a melhor TF-IDF em +0,026 de macro-F1 (IC pareado de 95%: +0,009

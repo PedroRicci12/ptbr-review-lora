@@ -357,3 +357,41 @@ Formato inspirado em ADRs (Architecture Decision Records).
   os treinados (25–100%); o passo 0 (modelo base em 4 bits) fica como referência e mostra o custo
   da quantização em relação ao zero-shot em fp16. As previsões das 500 de seleção ficam em
   `predictions/dev_select/`; o adapter é salvo fora do git, para a Etapa 8.
+- **Resultados do treino B (humanos), medidos nas 500 de seleção
+  (`reports/smollm3_qlora_human_select.json`):**
+  - Execução: Kaggle, Tesla T4, commit `ed4c06b`; peft 0.21.2, bitsandbytes 0.50.2. As 500 linhas de
+    seleção são idênticas às geradas localmente por `split_dev` (conferido).
+  - 30,2 M parâmetros treináveis (LoRA). 1.498 exemplos (2 descartados por passarem de 512 tokens),
+    279 passos, 6,1 s por passo; treino em 41 min, previsão do teste em 38 min.
+
+    | Passo | Perda de treino | Macro-F1 (seleção) |
+    |---|---|---|
+    | 0 (base em 4 bits) | — | 0,706 |
+    | 70 (25%) | 0,113 | **0,899** |
+    | 140 (50%) | 0,053 | 0,891 |
+    | 209 (75%) | 0,024 | 0,896 |
+    | 279 (100%) | 0,011 | 0,892 |
+
+  - **Melhor checkpoint: passo 70** (menos de 1 época). Depois dele a perda de treino caiu 10×, mas
+    a seleção ficou estável (0,89–0,90): o modelo decora o treino sem ganhar nem perder muito fora dele.
+  - **Custo da quantização (resultado não previsto):** nas mesmas 500, o modelo base em 4 bits fez
+    0,706 contra 0,811 em fp16 (Etapa 4). O neutro quase desaparece em 4 bits (recall do neutro
+    puro 0,10; 74 neutros previstos como negativo). Ou seja, o fine-tuning parte de um modelo pior
+    que o zero-shot e, mesmo assim, termina bem acima dele.
+
+    | Modelo (mesmas 500) | Macro-F1 (IC 95%) | F1 neutro |
+    |---|---|---|
+    | TF-IDF (melhor) | 0,762 (0,724–0,796) | 0,554 |
+    | BERTimbau ajustado | 0,792 (0,756–0,827) | 0,620 |
+    | SmolLM3 zero-shot (fp16) | 0,811 (0,775–0,848) | 0,627 |
+    | **SmolLM3 + QLoRA, rótulos humanos** | **0,899** (0,870–0,927) | **0,822** |
+
+  - Bootstrap pareado: +0,088 sobre o zero-shot (IC +0,048 a +0,129), +0,107 sobre o BERTimbau,
+    +0,138 sobre a TF-IDF. O ganho vem quase todo do neutro, sobretudo dos mistos (recall 0,51 → 0,85).
+  - **Cuidados:**
+    - a supervisão é diferente: B aprendeu com rótulos humanos da mesma fonte da avaliação (RePro),
+      enquanto TF-IDF e BERTimbau aprenderam com estrelas. A comparação justa com o mesmo tipo de
+      rótulo é com o treino A;
+    - o checkpoint foi escolhido nas mesmas 500 usadas na comparação, então 0,899 é otimista; como
+      os 4 checkpoints ficaram entre 0,891 e 0,899, o viés de seleção deve ser pequeno;
+    - só 20 neutros puros na seleção: o recall de 0,65 neles é muito instável.

@@ -133,6 +133,24 @@ actual run, with the script or notebook that produced it.
 - Caveat: B2W and RePro are public, so they may be in SmolLM3's pre-training data
   (not verified); that would inflate the zero-shot score.
 
+**QLoRA fine-tuning, on the 500-review selection part of dev** (the other 1,500 dev reviews are
+training data for the human-label run; from
+[reports/smollm3_qlora_human_select.json](reports/smollm3_qlora_human_select.json)):
+
+| Model (same 500 reviews) | Macro-F1 (95% CI) | F1 `neutro` |
+|---|---|---|
+| TF-IDF + LR, best | 0.762 (0.724–0.796) | 0.554 |
+| BERTimbau, fine-tuned | 0.792 (0.756–0.827) | 0.620 |
+| SmolLM3-3B zero-shot (fp16) | 0.811 (0.775–0.848) | 0.627 |
+| SmolLM3-3B in 4 bits, before training | 0.706 (0.666–0.748) | 0.355 |
+| **SmolLM3-3B + QLoRA, 1,500 human labels** | **0.899** (0.870–0.927) | **0.822** |
+
+- QLoRA on 1,500 human-labeled reviews adds +0.088 macro-F1 over zero-shot (paired 95% CI +0.048
+  to +0.129), almost all of it on `neutro`. The best checkpoint came after only 70 steps (<1 epoch).
+- Loading the model in 4 bits alone cost 0.105 macro-F1 before training (neutral nearly vanished).
+- This run learned from human labels of the same source as the evaluation, unlike the baselines
+  (star labels); the star-label QLoRA run is the like-for-like comparison (pending).
+
 - Adding the title and balancing class weights both helped TF-IDF (paired bootstrap, 95% CI of
   the difference above zero).
 - Fine-tuned BERTimbau beats the best TF-IDF by +0.026 macro-F1 (paired 95% CI +0.009 to
