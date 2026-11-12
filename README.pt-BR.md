@@ -6,8 +6,8 @@ Fine-tuning com QLoRA de um LLM aberto pequeno (1B–3B parâmetros) para classi
 em português do Brasil como **negativa**, **neutra** ou **positiva**, comparado com o modelo
 base e com baselines mais simples.
 
-> **Status:** em andamento — Etapa 5 (fine-tuning com QLoRA) concluída.
-> Todos os números abaixo são do dev; o teste ainda não foi usado.
+> **Status:** em andamento — Etapa 6 (avaliação única no teste) concluída.
+> Os resultados finais são do teste; o modelo ainda não foi publicado.
 
 ## Objetivo
 
@@ -110,8 +110,40 @@ Cada execução gera o `qlora_<set>_results.zip` (descompacte na raiz do reposit
 
 ## Resultados
 
-Os resultados finais (no teste) ainda não existem. Todo número desta seção vem de uma execução
-real, com o script ou notebook que o gerou.
+Todo número desta seção vem de uma execução real, com o script ou notebook que o gerou.
+
+### Resultados finais no teste
+
+8.003 avaliações do RePro rotuladas por humanos, nunca usadas para nenhuma escolha e avaliadas uma
+única vez, com as comparações pré-registradas em
+[src/ptbr_review_lora/protocol.py](src/ptbr_review_lora/protocol.py) antes da execução (decisão D17);
+de [reports/test_results.json](reports/test_results.json):
+
+| Modelo | Macro-F1 (IC 95%) | Acurácia | F1 `neutro` |
+|---|---|---|---|
+| Classe majoritária (`positivo`) | 0,195 (0,191–0,198) | 0,413 | 0,000 |
+| TF-IDF + RL, título + texto, balanceada | 0,757 (0,747–0,766) | 0,785 | 0,558 |
+| BERTimbau base ajustado (rótulos de estrelas) | 0,784 (0,775–0,793) | 0,803 | 0,618 |
+| SmolLM3-3B + QLoRA, 15.000 rótulos de estrelas | 0,789 (0,780–0,798) | 0,810 | 0,618 |
+| SmolLM3-3B zero-shot (sem fine-tuning) | 0,814 (0,804–0,823) | 0,850 | 0,634 |
+| **SmolLM3-3B + QLoRA, 1.500 rótulos humanos** | **0,911** (0,904–0,917) | **0,920** | **0,846** |
+
+Comparações pré-registradas (bootstrap pareado, 10.000 reamostras, IC de 98,3% com Bonferroni):
+
+| | Comparação | Diferença (IC 98,3%) | Veredito |
+|---|---|---|---|
+| H1 | QLoRA rótulos humanos vs zero-shot | +0,098 (+0,086 a +0,109) | melhor |
+| H2 | QLoRA rótulos de estrelas vs zero-shot | −0,025 (−0,037 a −0,013) | **pior** |
+| H3 | QLoRA rótulos humanos vs QLoRA estrelas | +0,122 (+0,111 a +0,134) | melhor |
+
+- O fine-tuning só ajudou com rótulos bons: 1.500 rótulos humanos somaram ~10 pontos ao zero-shot,
+  enquanto 15.000 rótulos de estrelas deixaram o modelo um pouco pior do que sem fine-tuning.
+- O teste confirma o dev em todos os modelos (diferenças de no máximo 0,012 de macro-F1); no dev a H2
+  era inconclusiva, e o teste, maior, mostra uma pequena perda.
+- O modelo com rótulos humanos treinou com avaliações do RePro (uma divisão diferente do teste),
+  então aprendeu o mesmo esquema de anotação que o teste usa; as baselines aprenderam com estrelas.
+
+### Resultados de desenvolvimento
 
 **Resultados no dev** (2.000 avaliações; de
 [reports/baselines_dev.json](reports/baselines_dev.json),
@@ -224,6 +256,11 @@ Preenchidos ao final de cada etapa.
   rótulos humanos ganharam por 11 pontos de 15.000 rótulos de estrelas. O QLoRA com estrelas
   concordou com o BERTimbau em 95% das avaliações: os rótulos, mais que a arquitetura, decidiram o
   que foi aprendido. Também inesperado: quantizar para 4 bits custou 10 pontos antes de qualquer treino.
+- **Etapa 6 — decidir como ler o teste antes de lê-lo.** As três hipóteses, a correção de
+  Bonferroni e a regra de veredito foram commitadas antes da única execução no teste, então
+  nenhuma comparação pôde ser escolhida depois de ver os números. O teste concordou com o dev em até
+  0,012 para todos os modelos, e o tamanho maior transformou um resultado inconclusivo no dev (o
+  fine-tuning com estrelas) numa perda mensurável.
 
 ## Licença
 

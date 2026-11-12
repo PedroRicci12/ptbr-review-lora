@@ -1,0 +1,284 @@
+{
+  "split": "repro_test",
+  "n": 8003,
+  "protocol_commit": "763c802477dc1ad910db3f8431514ced992fa983",
+  "n_resamples": 10000,
+  "seed": 42,
+  "family_alpha": 0.05,
+  "models": {
+    "majority": "majority",
+    "tfidf": "tfidf_lr__title_text__balanced",
+    "bertimbau": "bertimbau",
+    "zero_shot": "smollm3_base",
+    "qlora_stars": "smollm3_qlora_stars",
+    "qlora_human": "smollm3_qlora_human"
+  },
+  "results": {
+    "majority": {
+      "macro_f1": 0.19472209936606222,
+      "accuracy": 0.4125952767712108,
+      "f1_per_class": {
+        "negativo": 0.0,
+        "neutro": 0.0,
+        "positivo": 0.5841662980981867
+      },
+      "confusion_matrix": [
+        [
+          0,
+          0,
+          2759
+        ],
+        [
+          0,
+          0,
+          1942
+        ],
+        [
+          0,
+          0,
+          3302
+        ]
+      ],
+      "macro_f1_ci95": [
+        0.19110437650414477,
+        0.19824407374890254
+      ],
+      "neutral_recall_by_group": {
+        "neutro": 0.0,
+        "misto": 0.0
+      }
+    },
+    "tfidf": {
+      "macro_f1": 0.7566697173892883,
+      "accuracy": 0.7852055479195301,
+      "f1_per_class": {
+        "negativo": 0.8736522911051213,
+        "neutro": 0.5582010582010583,
+        "positivo": 0.8381558028616852
+      },
+      "confusion_matrix": [
+        [
+          2593,
+          138,
+          28
+        ],
+        [
+          563,
+          1055,
+          324
+        ],
+        [
+          21,
+          645,
+          2636
+        ]
+      ],
+      "macro_f1_ci95": [
+        0.7471434592781208,
+        0.7659822363289975
+      ],
+      "neutral_recall_by_group": {
+        "neutro": 0.4801223241590214,
+        "misto": 0.5560371517027863
+      }
+    },
+    "bertimbau": {
+      "macro_f1": 0.7841603505823773,
+      "accuracy": 0.8025740347369736,
+      "f1_per_class": {
+        "negativo": 0.8947092718700891,
+        "neutro": 0.6179337231968811,
+        "positivo": 0.839838056680162
+      },
+      "confusion_matrix": [
+        [
+          2562,
+          186,
+          11
+        ],
+        [
+          405,
+          1268,
+          269
+        ],
+        [
+          1,
+          708,
+          2593
+        ]
+      ],
+      "macro_f1_ci95": [
+        0.7752962981270317,
+        0.7930262497607211
+      ],
+      "neutral_recall_by_group": {
+        "neutro": 0.6850152905198776,
+        "misto": 0.6464396284829721
+      }
+    },
+    "zero_shot": {
+      "macro_f1": 0.8135048393236763,
+      "accuracy": 0.8499312757715857,
+      "f1_per_class": {
+        "negativo": 0.8674579624134521,
+        "neutro": 0.6335174953959485,
+        "positivo": 0.9395390601616282
+      },
+      "confusion_matrix": [
+        [
+          2631,
+          124,
+          4
+        ],
+        [
+          673,
+          1032,
+          237
+        ],
+        [
+          3,
+          160,
+          3139
+        ]
+      ],
+      "macro_f1_ci95": [
+        0.8044219165457791,
+        0.8226893931047895
+      ],
+      "neutral_recall_by_group": {
+        "neutro": 0.599388379204893,
+        "misto": 0.5176470588235295
+      }
+    },
+    "qlora_stars": {
+      "macro_f1": 0.788636277405088,
+      "accuracy": 0.8101961764338373,
+      "f1_per_class": {
+        "negativo": 0.8977035490605428,
+        "neutro": 0.6175723717623159,
+        "positivo": 0.850632911392405
+      },
+      "confusion_matrix": [
+        [
+          2580,
+          168,
+          11
+        ],
+        [
+          407,
+          1216,
+          319
+        ],
+        [
+          2,
+          612,
+          2688
+        ]
+      ],
+      "macro_f1_ci95": [
+        0.7797274554568236,
+        0.7975221300257588
+      ],
+      "neutral_recall_by_group": {
+        "neutro": 0.691131498470948,
+        "misto": 0.6130030959752322
+      }
+    },
+    "qlora_human": {
+      "macro_f1": 0.9109639153482658,
+      "accuracy": 0.9200299887542172,
+      "f1_per_class": {
+        "negativo": 0.931207120341183,
+        "neutro": 0.845597405836867,
+        "positivo": 0.9560872198667474
+      },
+      "confusion_matrix": [
+        [
+          2511,
+          228,
+          20
+        ],
+        [
+          122,
+          1695,
+          125
+        ],
+        [
+          1,
+          144,
+          3157
+        ]
+      ],
+      "macro_f1_ci95": [
+        0.904447167169764,
+        0.9173996945863043
+      ],
+      "neutral_recall_by_group": {
+        "neutro": 0.7584097859327217,
+        "misto": 0.8959752321981425
+      }
+    }
+  },
+  "primary_comparisons": {
+    "H1": {
+      "question": "Does fine-tuning on 1,500 human labels improve the LLM?",
+      "b": "qlora_human",
+      "a": "zero_shot",
+      "confidence": 0.9833333333333333,
+      "diff": 0.09745907602458947,
+      "low": 0.08583287868748858,
+      "high": 0.10936046345173052,
+      "p_b_not_better": 0.0,
+      "verdict": "B better"
+    },
+    "H2": {
+      "question": "Does fine-tuning on 15,000 star labels improve the LLM?",
+      "b": "qlora_stars",
+      "a": "zero_shot",
+      "confidence": 0.9833333333333333,
+      "diff": -0.024868561918588328,
+      "low": -0.036954036223292706,
+      "high": -0.012896413081951977,
+      "p_b_not_better": 1.0,
+      "verdict": "B worse"
+    },
+    "H3": {
+      "question": "Do 1,500 human labels beat 15,000 star labels?",
+      "b": "qlora_human",
+      "a": "qlora_stars",
+      "confidence": 0.9833333333333333,
+      "diff": 0.1223276379431778,
+      "low": 0.11049156147338743,
+      "high": 0.13413842578102034,
+      "p_b_not_better": 0.0,
+      "verdict": "B better"
+    }
+  },
+  "descriptive_comparisons": {
+    "qlora_human vs bertimbau": {
+      "diff": 0.1268035647658885,
+      "low": 0.11708188880126981,
+      "high": 0.13670313077073715,
+      "p_b_not_better": 0.0
+    },
+    "qlora_human vs tfidf": {
+      "diff": 0.15429419795897747,
+      "low": 0.14397423431627893,
+      "high": 0.1649496148039088,
+      "p_b_not_better": 0.0
+    },
+    "zero_shot vs bertimbau": {
+      "diff": 0.029344488741299024,
+      "low": 0.019146916197571515,
+      "high": 0.03975404423764891,
+      "p_b_not_better": 0.0
+    },
+    "bertimbau vs tfidf": {
+      "diff": 0.027490633193088976,
+      "low": 0.01909238842245848,
+      "high": 0.0358096679891805,
+      "p_b_not_better": 0.0
+    }
+  },
+  "seconds": 2329
+}

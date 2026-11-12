@@ -450,3 +450,38 @@ Formato inspirado em ADRs (Architecture Decision Records).
 - **O teste não muda nenhuma escolha:** qualquer resultado contrário ao dev é relatado como achado,
   sem trocar de modelo nem rodar de novo. O modelo publicado na Etapa 8 é o QLoRA com rótulos
   humanos, decidido no dev.
+- **Incidente de execução (registrado por transparência):** a primeira execução começou às 22:06 de
+  11/11, um minuto depois do commit do protocolo (`763c802`), gerou as previsões da TF-IDF e da
+  classe majoritária e foi interrompida antes de gravar o relatório. Nenhuma métrica dessa execução
+  foi lida ou usada. Como o resultado é determinístico (seed 42), a execução completa de 12/11 dá os
+  mesmos números que a primeira daria.
+- **Resultados (medidos no teste, 8.003; `reports/test_results.json`, 39 min na CPU):**
+
+  | Modelo | Macro-F1 teste (IC 95%) | Macro-F1 dev | F1 neutro |
+  |---|---|---|---|
+  | Classe majoritária | 0,195 (0,191–0,198) | 0,195 | 0,000 |
+  | TF-IDF | 0,757 (0,747–0,766) | 0,762 | 0,558 |
+  | BERTimbau | 0,784 (0,775–0,793) | 0,787 | 0,618 |
+  | QLoRA estrelas | 0,789 (0,780–0,798) | 0,788* | 0,618 |
+  | Zero-shot | 0,814 (0,804–0,823) | 0,815 | 0,634 |
+  | **QLoRA humanos** | **0,911** (0,904–0,917) | 0,899* | **0,846** |
+
+  \* nas 500 de seleção; os outros no dev inteiro (2.000).
+
+  | | Comparação | Diferença (IC 98,3%) | Veredito |
+  |---|---|---|---|
+  | H1 | QLoRA humanos − zero-shot | +0,098 (+0,086 a +0,109) | B melhor |
+  | H2 | QLoRA estrelas − zero-shot | −0,025 (−0,037 a −0,013) | **B pior** |
+  | H3 | QLoRA humanos − QLoRA estrelas | +0,122 (+0,111 a +0,134) | B melhor |
+
+  - O teste confirmou o dev em todos os modelos (diferença máxima de 0,012). O QLoRA humanos ficou
+    um pouco **acima** no teste que na seleção (0,911 vs 0,899), sinal de que o viés de escolher o
+    checkpoint nas 500 foi pequeno.
+  - H2 era inconclusiva no dev (IC −0,059 a +0,013 em 500); com 8.003 avaliações, o fine-tuning com
+    estrelas é mensuravelmente pior que o zero-shot. Resultado negativo registrado.
+  - Descritivas (IC 95%): QLoRA humanos supera BERTimbau em +0,127 e TF-IDF em +0,154; zero-shot
+    supera BERTimbau em +0,029; BERTimbau supera TF-IDF em +0,027.
+  - Ganho do QLoRA humanos concentrado no neutro: recall do misto 0,52 (zero-shot) → 0,90 e do
+    neutro puro 0,60 → 0,76.
+  - As ressalvas continuam: o QLoRA humanos aprendeu o mesmo esquema de anotação do teste (mesma
+    fonte, divisão diferente), e a contaminação do pré-treino não foi verificada.

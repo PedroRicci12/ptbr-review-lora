@@ -6,8 +6,8 @@ QLoRA fine-tuning of a small open LLM (1B–3B parameters) to classify Brazilian
 reviews as **negative**, **neutral** or **positive**, compared against the base model and
 simpler baselines.
 
-> **Status:** work in progress — Stage 5 (QLoRA fine-tuning) done.
-> All numbers below are on the dev set; the test set is still unused.
+> **Status:** work in progress — Stage 6 (single test-set evaluation) done.
+> Final results are on the test set; the model is not published yet.
 
 ## Goal
 
@@ -110,8 +110,39 @@ Each run produces `qlora_<set>_results.zip` (unzip at the repository root) and
 
 ## Results
 
-Final (test set) results are not available yet. Every number in this section comes from an
-actual run, with the script or notebook that produced it.
+Every number in this section comes from an actual run, with the script or notebook that produced it.
+
+### Final results on the test set
+
+8,003 human-labeled RePro reviews, never used for any choice and evaluated once, with comparisons
+pre-registered in [src/ptbr_review_lora/protocol.py](src/ptbr_review_lora/protocol.py) before the
+run (decision D17); from [reports/test_results.json](reports/test_results.json):
+
+| Model | Macro-F1 (95% CI) | Accuracy | F1 `neutro` |
+|---|---|---|---|
+| Majority class (`positivo`) | 0.195 (0.191–0.198) | 0.413 | 0.000 |
+| TF-IDF + LR, title + text, balanced | 0.757 (0.747–0.766) | 0.785 | 0.558 |
+| BERTimbau base, fine-tuned (star labels) | 0.784 (0.775–0.793) | 0.803 | 0.618 |
+| SmolLM3-3B + QLoRA, 15,000 star labels | 0.789 (0.780–0.798) | 0.810 | 0.618 |
+| SmolLM3-3B zero-shot (no fine-tuning) | 0.814 (0.804–0.823) | 0.850 | 0.634 |
+| **SmolLM3-3B + QLoRA, 1,500 human labels** | **0.911** (0.904–0.917) | **0.920** | **0.846** |
+
+Pre-registered comparisons (paired bootstrap, 10,000 resamples, Bonferroni-corrected 98.3% CIs):
+
+| | Comparison | Difference (98.3% CI) | Verdict |
+|---|---|---|---|
+| H1 | QLoRA human labels vs zero-shot | +0.098 (+0.086 to +0.109) | better |
+| H2 | QLoRA star labels vs zero-shot | −0.025 (−0.037 to −0.013) | **worse** |
+| H3 | QLoRA human labels vs QLoRA star labels | +0.122 (+0.111 to +0.134) | better |
+
+- Fine-tuning helped only with good labels: 1,500 human labels added ~10 points over zero-shot,
+  while 15,000 star labels made the model slightly worse than using no fine-tuning at all.
+- The test confirms dev for every model (differences of at most 0.012 macro-F1); on dev, H2 was
+  inconclusive, and the larger test set settles it as a small loss.
+- The human-label model was trained on RePro reviews (a different split from test), so it learned the
+  same annotation scheme the test uses; the baselines learned from star ratings.
+
+### Development results
 
 **Results on dev** (2,000 reviews; from
 [reports/baselines_dev.json](reports/baselines_dev.json),
@@ -220,6 +251,10 @@ To be filled in at the end of each stage.
   compared: 1,500 human labels won by 11 points over 15,000 star labels. The star-label QLoRA model
   agreed with BERTimbau on 95% of reviews: the labels, more than the architecture, decided what was
   learned. Also unexpected: quantizing to 4 bits cost 10 points before any training.
+- **Stage 6 — decide how to read the test before reading it.** The three hypotheses, the Bonferroni
+  correction and the verdict rule were committed before the single test run, so no comparison could
+  be picked after seeing the numbers. The test agreed with dev within 0.012 for every model, and its
+  larger size turned an inconclusive dev result (star-label fine-tuning) into a measurable loss.
 
 ## License
 
