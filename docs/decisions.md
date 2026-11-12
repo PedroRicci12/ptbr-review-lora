@@ -424,3 +424,29 @@ Formato inspirado em ADRs (Architecture Decision Records).
   Ressalva: B usa rótulos da mesma fonte e anotação da avaliação (RePro); parte do ganho pode ser
   ajuste a essa anotação específica, e não só rótulos "mais corretos". O teste (Etapa 6) usa a mesma
   fonte, então não separa os dois efeitos; um teste em outro domínio (Etapa 7) separaria.
+
+## D17 — Etapa 6: protocolo pré-registrado da avaliação no teste
+
+- **Data:** 2026-11-12 (Etapa 6), registrado e commitado **antes** de qualquer métrica no teste.
+- **Modelos congelados (todos escolhidos no dev):** classe majoritária, TF-IDF (título + texto,
+  pesos balanceados), BERTimbau ajustado, SmolLM3 zero-shot (fp16), QLoRA com estrelas, QLoRA com
+  rótulos humanos. As previsões do teste da TF-IDF e da classe majoritária são geradas pelo próprio
+  script; as outras já estavam salvas.
+- **Comparações principais (escolhidas por Pedro):**
+  - H1: QLoRA humanos vs zero-shot — fine-tuning com poucos rótulos bons melhora o LLM?
+  - H2: QLoRA estrelas vs zero-shot — fine-tuning com muitos rótulos ruidosos melhora o LLM?
+  - H3: QLoRA humanos vs QLoRA estrelas — qualidade do rótulo vale mais que quantidade?
+  - As demais (QLoRA humanos vs BERTimbau e vs TF-IDF, zero-shot vs BERTimbau, BERTimbau vs
+    TF-IDF) são descritivas: IC de 95%, sem status de conclusão.
+- **Correção para múltiplas comparações (escolhida por Pedro): Bonferroni.** IC de
+  1 − 0,05/3 ≈ 98,3% em cada comparação principal, mantendo em 5% a chance de ao menos um falso
+  positivo entre as três. Alternativas: Holm (menos conservador, mais difícil de explicar) e nenhuma.
+- **Regra de leitura (fixada antes):** IC inteiro acima de zero → "B melhor"; inteiro abaixo →
+  "B pior"; contém o zero → "inconclusivo".
+- **Bootstrap:** 10.000 reamostras (no dev foram 1.000), porque um IC de 98,3% depende das caudas;
+  seed 42.
+- **Uso único:** `scripts/evaluate_test.py` se recusa a rodar se `reports/test_results.json` já
+  existir, e o relatório registra o commit do protocolo.
+- **O teste não muda nenhuma escolha:** qualquer resultado contrário ao dev é relatado como achado,
+  sem trocar de modelo nem rodar de novo. O modelo publicado na Etapa 8 é o QLoRA com rótulos
+  humanos, decidido no dev.
