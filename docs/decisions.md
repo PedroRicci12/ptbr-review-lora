@@ -485,3 +485,30 @@ Formato inspirado em ADRs (Architecture Decision Records).
     neutro puro 0,60 → 0,76.
   - As ressalvas continuam: o QLoRA humanos aprendeu o mesmo esquema de anotação do teste (mesma
     fonte, divisão diferente), e a contaminação do pré-treino não foi verificada.
+
+## D18 — Etapa 7: ablações
+
+- **Data:** 2026-11-12 (Etapa 7)
+- **Regra:** todas as ablações são medidas nas **500 de seleção** do dev. O teste já foi usado uma
+  vez (D12, D17) e não é usado de novo. Nenhuma ablação muda o modelo publicado. As comparações são
+  exploratórias (IC de 95%, sem correção para múltiplas comparações).
+- **Escolhidas (por Pedro): A + B + C**, uma execução do `07_ablations.ipynb` cada (`EXPERIMENT`).
+  - **A. Curva de aprendizado:** QLoRA com 250, 500 e 1.000 rótulos humanos; o ponto de 1.500 é o da
+    Etapa 5. **Subconjuntos aninhados e estratificados** (`nested_subsets`: 250 ⊂ 500 ⊂ 1.000 ⊂
+    1.500, pelos 4 grupos, seed 42), para medir só o efeito do tamanho. Mesma receita: 3 épocas,
+    checkpoints em 25–100%. Medido localmente: 250 = 104 positivo, 86 negativo, 50 misto,
+    10 neutro puro; 500 = 207/173/100/20; 1.000 = 413/345/201/41.
+  - **B. Variância entre seeds:** os mesmos 1.500 com as seeds de treino 43 e 44 (inicialização do
+    LoRA e ordem dos exemplos); a seed 42 é a da Etapa 5. Mede a instabilidade do treino, não a da
+    amostra. Resultado: média e desvio-padrão de 3 seeds.
+  - **C. Few-shot:** modelo base em fp16, sem treino, 6-shot com exemplos (a) rotulados por humanos,
+    sorteados dos 1.500 do dev (linhas 1943, 359, 1503, 372, 410, 1103 do dev), e (b) dois novos
+    sorteios de exemplos de estrelas (seeds 1 e 2). Testa a hipótese da Etapa 4: o 6-shot piorou
+    pelo ruído dos rótulos dos exemplos ou por aquele sorteio?
+- **Descartadas:**
+  - D (adapter sobre o modelo em fp16): mais barata, mas menos central para o argumento.
+  - **Teste fora do domínio:** não há dataset verificado em pt-BR com 3 classes humanas em outro
+    domínio. O TweetSentBR só publica IDs (exige a API do X); avaliações de restaurante encontradas
+    são binárias e por estrelas; o clapAI/MultiLingualSentiment não informa a origem nem a anotação
+    do português (pode até conter a B2W). Fica como limitação: não dá para separar "rótulos melhores"
+    de "aprendeu a anotação do RePro".

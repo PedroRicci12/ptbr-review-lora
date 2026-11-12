@@ -108,6 +108,10 @@ uma vez por conjunto de treino: ajuste `TRAINING_SET = "stars"` ou `"human"` na 
 Cada execução gera o `qlora_<set>_results.zip` (descompacte na raiz do repositório) e o
 `qlora_<set>_adapter.zip` (pesos do LoRA; guarde fora do repositório).
 
+Rodar as ablações (GPU) com [notebooks/07_ablations.ipynb](notebooks/07_ablations.ipynb), uma vez por
+experimento: `EXPERIMENT = "learning_curve"`, `"seeds"` ou `"few_shot"`; cada execução gera o
+`ablation_<experiment>_results.zip`. Elas usam só a parte de seleção do dev, nunca o teste.
+
 ## Resultados
 
 Todo número desta seção vem de uma execução real, com o script ou notebook que o gerou.

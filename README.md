@@ -108,6 +108,10 @@ once per training set: set `TRAINING_SET = "stars"` or `"human"` in the configur
 Each run produces `qlora_<set>_results.zip` (unzip at the repository root) and
 `qlora_<set>_adapter.zip` (LoRA weights; keep it outside the repository).
 
+Run the ablations (GPU) with [notebooks/07_ablations.ipynb](notebooks/07_ablations.ipynb), once per
+experiment: `EXPERIMENT = "learning_curve"`, `"seeds"` or `"few_shot"`; each run produces
+`ablation_<experiment>_results.zip`. They use only the dev selection set, never the test set.
+
 ## Results
 
 Every number in this section comes from an actual run, with the script or notebook that produced it.

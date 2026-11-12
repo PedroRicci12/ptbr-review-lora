@@ -2,7 +2,13 @@ import pandas as pd
 import pytest
 
 from ptbr_review_lora.data import LABELS, split_dev
-from ptbr_review_lora.training import IGNORE_INDEX, build_example, pad_batch, sample_balanced
+from ptbr_review_lora.training import (
+    IGNORE_INDEX,
+    build_example,
+    nested_subsets,
+    pad_batch,
+    sample_balanced,
+)
 
 
 def _pool(n_per_label=(50, 10, 80)):
@@ -68,3 +74,25 @@ def test_split_dev_is_stratified():
     assert select["polarity_group"].value_counts().to_dict() == {
         "negativo": 10, "positivo": 8, "misto": 5, "neutro": 2,
     }
+
+
+def test_nested_subsets_are_nested_sized_and_stratified():
+    dev = _dev()
+    subsets = nested_subsets(dev, [20, 40, 80, 100], seed=1)
+    assert {k: len(v) for k, v in subsets.items()} == {100: 100, 80: 80, 40: 40, 20: 20}
+    assert set(subsets[20].index) <= set(subsets[40].index) <= set(subsets[80].index) <= set(dev.index)
+    # 40% of each group: 40 negativo, 32 positivo, 20 misto, 8 neutro (rounded by scikit-learn).
+    assert subsets[40]["polarity_group"].value_counts().to_dict() == {
+        "negativo": 16, "positivo": 13, "misto": 8, "neutro": 3,
+    }
+
+
+def test_nested_subsets_are_deterministic():
+    a = nested_subsets(_dev(), [20, 50], seed=3)
+    b = nested_subsets(_dev(), [20, 50], seed=3)
+    assert a[20].index.tolist() == b[20].index.tolist()
+
+
+def test_nested_subsets_reject_sizes_above_the_data():
+    with pytest.raises(ValueError):
+        nested_subsets(_dev(), [101])

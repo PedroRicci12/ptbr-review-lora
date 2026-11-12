@@ -34,6 +34,29 @@ def sample_balanced(pool: pd.DataFrame, per_class: int, seed: int = 42) -> pd.Da
     return pd.concat(picked).sample(frac=1, random_state=seed)
 
 
+def nested_subsets(
+    df: pd.DataFrame, sizes: Sequence[int], seed: int = 42, stratify: str = "polarity_group"
+) -> dict[int, pd.DataFrame]:
+    """Nested, stratified subsets for a learning curve (Stage 7, decision D18).
+
+    Each smaller subset is drawn from the next larger one (250 inside 500 inside 1,000 ...), so
+    the curve measures the effect of size, not of seeing different reviews. The index is kept.
+    """
+    from sklearn.model_selection import train_test_split
+
+    ordered = sorted(sizes, reverse=True)
+    if ordered[0] > len(df):
+        raise ValueError(f"largest size {ordered[0]} exceeds the {len(df)} rows available")
+    subsets, current = {}, df
+    for size in ordered:
+        if size < len(current):
+            current, _ = train_test_split(
+                current, train_size=size, stratify=current[stratify], random_state=seed
+            )
+        subsets[size] = current.sort_index()
+    return subsets
+
+
 def build_example(prompt_ids: Sequence[int], answer_ids: Sequence[int]) -> dict[str, list[int]]:
     """Token ids for one training example and the targets of the loss.
 
