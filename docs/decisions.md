@@ -395,3 +395,32 @@ Formato inspirado em ADRs (Architecture Decision Records).
     - o checkpoint foi escolhido nas mesmas 500 usadas na comparação, então 0,899 é otimista; como
       os 4 checkpoints ficaram entre 0,891 e 0,899, o viés de seleção deve ser pequeno;
     - só 20 neutros puros na seleção: o recall de 0,65 neles é muito instável.
+- **Resultados do treino A (estrelas), medidos nas mesmas 500
+  (`reports/smollm3_qlora_stars_select.json`):**
+  - Execução: Kaggle, Tesla T4, commit `690a4bd`. 14.981 exemplos (19 descartados por tamanho),
+    936 passos, 7,74 s por passo (piloto estimou 2,0 h; abaixo da trava de 3 h); treino em 2 h 14 min,
+    previsão do teste em 44 min.
+
+    | Passo | Perda de treino | Macro-F1 (seleção) |
+    |---|---|---|
+    | 0 (base em 4 bits) | — | 0,706 |
+    | 234 (25%) | 0,173 | 0,782 |
+    | 468 (50%) | 0,143 | 0,769 |
+    | 702 (75%) | 0,138 | 0,780 |
+    | 936 (100%) | 0,125 | **0,788** |
+
+  - Melhor checkpoint: o último, 0,788 (IC 0,752–0,823), F1 neutro 0,603. A perda de treino ficou
+    alta (0,125, contra 0,011 no B): com rótulos ruidosos, parte dos exemplos é impossível de acertar.
+  - **Resultado negativo:** contra o zero-shot em fp16, −0,023 (IC −0,059 a +0,013), ou seja, não
+    ajudou e possivelmente atrapalhou. Contra o BERTimbau, −0,005 (IC −0,026 a +0,015): empate.
+  - **Concorda com o BERTimbau em 95,4% das 500.** Dois modelos muito diferentes (110M parâmetros
+    com fine-tuning completo e 3B com QLoRA) treinados com os mesmos rótulos de estrelas convergem
+    para quase as mesmas previsões, incluindo o erro típico do ruído (positivos previstos como
+    neutro: 30 no A, 36 no BERTimbau, 6 no B). O que o modelo aprende é decidido mais pelos rótulos
+    do que pela arquitetura.
+- **Conclusão da Etapa 5 — 1.500 rótulos humanos superam 15.000 rótulos de estrelas:** B − A =
+  **+0,112** (IC pareado +0,070 a +0,151), com 1/10 dos exemplos e menos de 1/3 do tempo de treino.
+  Para esta tarefa, a qualidade do rótulo pesou mais que a quantidade e mais que o modelo.
+  Ressalva: B usa rótulos da mesma fonte e anotação da avaliação (RePro); parte do ganho pode ser
+  ajuste a essa anotação específica, e não só rótulos "mais corretos". O teste (Etapa 6) usa a mesma
+  fonte, então não separa os dois efeitos; um teste em outro domínio (Etapa 7) separaria.

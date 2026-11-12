@@ -6,8 +6,8 @@ QLoRA fine-tuning of a small open LLM (1B–3B parameters) to classify Brazilian
 reviews as **negative**, **neutral** or **positive**, compared against the base model and
 simpler baselines.
 
-> **Status:** work in progress — Stage 4 (base LLM, zero-shot and few-shot) done.
-> No LLM has been fine-tuned yet. All numbers below are on the dev set; the test set is still unused.
+> **Status:** work in progress — Stage 5 (QLoRA fine-tuning) done.
+> All numbers below are on the dev set; the test set is still unused.
 
 ## Goal
 
@@ -143,13 +143,19 @@ training data for the human-label run; from
 | BERTimbau, fine-tuned | 0.792 (0.756–0.827) | 0.620 |
 | SmolLM3-3B zero-shot (fp16) | 0.811 (0.775–0.848) | 0.627 |
 | SmolLM3-3B in 4 bits, before training | 0.706 (0.666–0.748) | 0.355 |
+| SmolLM3-3B + QLoRA, 15,000 star labels | 0.788 (0.752–0.823) | 0.603 |
 | **SmolLM3-3B + QLoRA, 1,500 human labels** | **0.899** (0.870–0.927) | **0.822** |
 
-- QLoRA on 1,500 human-labeled reviews adds +0.088 macro-F1 over zero-shot (paired 95% CI +0.048
-  to +0.129), almost all of it on `neutro`. The best checkpoint came after only 70 steps (<1 epoch).
+- **1,500 human labels beat 15,000 star labels by +0.112 macro-F1** (paired 95% CI +0.070 to
+  +0.151), with a tenth of the examples and under a third of the training time.
+- QLoRA on star labels did not beat zero-shot (−0.023, CI −0.059 to +0.013) and tied with
+  BERTimbau, agreeing with it on 95.4% of reviews: with the same noisy labels, a 110M encoder and
+  a 3B LLM learn almost the same thing.
+- QLoRA on human labels adds +0.088 over zero-shot (CI +0.048 to +0.129), almost all on `neutro`;
+  its best checkpoint came after only 70 steps (<1 epoch).
 - Loading the model in 4 bits alone cost 0.105 macro-F1 before training (neutral nearly vanished).
-- This run learned from human labels of the same source as the evaluation, unlike the baselines
-  (star labels); the star-label QLoRA run is the like-for-like comparison (pending).
+- The human-label run learned from the same source and annotation as the evaluation, so part of
+  its gain may be fitting that annotation rather than "more correct" labels.
 
 - Adding the title and balancing class weights both helped TF-IDF (paired bootstrap, 95% CI of
   the difference above zero).
@@ -174,6 +180,8 @@ To be documented as the project progresses. Known from the start:
   not bit-for-bit deterministic, so a rerun may differ slightly. Its training epoch was picked on dev.
 - Possible data contamination: both datasets are public, and SmolLM3's pre-training data was not
   checked for them. Few-shot was evaluated with a single draw of 6 examples.
+- QLoRA runs were compared on 500 dev reviews (only 20 pure-neutral), so their intervals are about
+  twice as wide as on the full dev; checkpoints were chosen on the same 500. Each run used one seed.
 
 ## Learnings
 
@@ -207,6 +215,11 @@ To be filled in at the end of each stage.
   also mattered: by default it writes today's date into the prompt, which silently breaks
   reproducibility. Scoring labels and generating answers gave almost identical predictions, so
   for this model the answer format was not a problem.
+- **Stage 5 — label quality beat data size and model size.** Before training, measuring the label
+  noise showed it was systematic (3-star reviews are often positive for humans), so two runs were
+  compared: 1,500 human labels won by 11 points over 15,000 star labels. The star-label QLoRA model
+  agreed with BERTimbau on 95% of reviews: the labels, more than the architecture, decided what was
+  learned. Also unexpected: quantizing to 4 bits cost 10 points before any training.
 
 ## License
 

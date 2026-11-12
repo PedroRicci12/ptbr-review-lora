@@ -6,8 +6,8 @@ Fine-tuning com QLoRA de um LLM aberto pequeno (1B–3B parâmetros) para classi
 em português do Brasil como **negativa**, **neutra** ou **positiva**, comparado com o modelo
 base e com baselines mais simples.
 
-> **Status:** em andamento — Etapa 4 (LLM base, zero-shot e few-shot) concluída.
-> Nenhum LLM passou por fine-tuning ainda. Todos os números abaixo são do dev; o teste ainda não foi usado.
+> **Status:** em andamento — Etapa 5 (fine-tuning com QLoRA) concluída.
+> Todos os números abaixo são do dev; o teste ainda não foi usado.
 
 ## Objetivo
 
@@ -144,14 +144,19 @@ o treino da versão com rótulos humanos; de
 | BERTimbau ajustado | 0,792 (0,756–0,827) | 0,620 |
 | SmolLM3-3B zero-shot (fp16) | 0,811 (0,775–0,848) | 0,627 |
 | SmolLM3-3B em 4 bits, antes do treino | 0,706 (0,666–0,748) | 0,355 |
+| SmolLM3-3B + QLoRA, 15.000 rótulos de estrelas | 0,788 (0,752–0,823) | 0,603 |
 | **SmolLM3-3B + QLoRA, 1.500 rótulos humanos** | **0,899** (0,870–0,927) | **0,822** |
 
-- O QLoRA com 1.500 avaliações rotuladas por humanos soma +0,088 de macro-F1 ao zero-shot (IC
-  pareado de 95%: +0,048 a +0,129), quase tudo no `neutro`. O melhor checkpoint veio com só 70
-  passos (menos de 1 época).
+- **1.500 rótulos humanos superam 15.000 rótulos de estrelas em +0,112 de macro-F1** (IC pareado
+  de 95%: +0,070 a +0,151), com um décimo dos exemplos e menos de um terço do tempo de treino.
+- O QLoRA com estrelas não superou o zero-shot (−0,023, IC −0,059 a +0,013) e empatou com o
+  BERTimbau, concordando com ele em 95,4% das avaliações: com os mesmos rótulos ruidosos, um
+  encoder de 110M e um LLM de 3B aprendem quase a mesma coisa.
+- O QLoRA com rótulos humanos soma +0,088 ao zero-shot (IC +0,048 a +0,129), quase tudo no
+  `neutro`; o melhor checkpoint veio com só 70 passos (menos de 1 época).
 - Só carregar o modelo em 4 bits custou 0,105 de macro-F1 antes do treino (o neutro quase sumiu).
-- Esse treino aprendeu com rótulos humanos da mesma fonte da avaliação, ao contrário das baselines
-  (rótulos de estrelas); a comparação de igual para igual é o QLoRA com estrelas (pendente).
+- O treino com rótulos humanos aprendeu com a mesma fonte e anotação da avaliação, então parte do
+  ganho pode ser ajuste a essa anotação, e não só rótulos "mais corretos".
 
 - Incluir o título e balancear os pesos das classes ajudou a TF-IDF (bootstrap pareado, IC de
   95% da diferença acima de zero).
@@ -177,6 +182,9 @@ Serão documentadas ao longo do projeto. Já conhecida desde o início:
   GPU não é determinístico bit a bit, então uma nova execução pode variar um pouco. A época foi escolhida no dev.
 - Possível contaminação: os dois datasets são públicos, e não foi verificado se estão nos dados de
   pré-treino do SmolLM3. O few-shot foi avaliado com um único sorteio de 6 exemplos.
+- Os treinos de QLoRA foram comparados em 500 avaliações do dev (só 20 neutras puras), então os
+  intervalos são cerca de 2× mais largos que no dev inteiro; os checkpoints foram escolhidos nessas
+  mesmas 500. Cada treino usou uma única seed.
 
 ## Aprendizados
 
@@ -210,6 +218,12 @@ Preenchidos ao final de cada etapa.
   diferença: por padrão ele escreve a data de hoje no prompt, o que quebra a reprodutibilidade sem
   avisar. Pontuar os rótulos e gerar a resposta deram previsões quase idênticas, então, para este
   modelo, o formato da resposta não foi problema.
+- **Etapa 5 — a qualidade do rótulo pesou mais que a quantidade de dados e que o tamanho do modelo.**
+  Antes de treinar, medir o ruído dos rótulos mostrou que ele era sistemático (avaliações de 3
+  estrelas costumam ser positivas para os humanos), então dois treinos foram comparados: 1.500
+  rótulos humanos ganharam por 11 pontos de 15.000 rótulos de estrelas. O QLoRA com estrelas
+  concordou com o BERTimbau em 95% das avaliações: os rótulos, mais que a arquitetura, decidiram o
+  que foi aprendido. Também inesperado: quantizar para 4 bits custou 10 pontos antes de qualquer treino.
 
 ## Licença
 
