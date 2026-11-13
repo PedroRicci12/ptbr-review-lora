@@ -6,7 +6,7 @@ Fine-tuning com QLoRA de um LLM aberto pequeno (1B–3B parâmetros) para classi
 em português do Brasil como **negativa**, **neutra** ou **positiva**, comparado com o modelo
 base e com baselines mais simples.
 
-> **Status:** em andamento — Etapa 6 (avaliação única no teste) concluída.
+> **Status:** em andamento — Etapa 7 (ablações no dev) concluída.
 > Os resultados finais são do teste; o modelo ainda não foi publicado.
 
 ## Objetivo
@@ -204,6 +204,57 @@ o treino da versão com rótulos humanos; de
 - As duas configurações foram escolhidas no dev, então os números delas no dev são otimistas.
   Detalhes: decisões D13 e D14 em [docs/decisions.md](docs/decisions.md).
 
+### Ablações (parte de seleção do dev, 500 avaliações)
+
+Exploratórias (IC de 95%, sem correção para múltiplas comparações); o teste não é usado de novo.
+Detalhes: decisão D18 em [docs/decisions.md](docs/decisions.md).
+
+**Exemplos do few-shot** (modelo base, sem treino; de
+[reports/ablation_few_shot_select.json](reports/ablation_few_shot_select.json)):
+
+| Prompt | Macro-F1 (IC 95%) | F1 `neutro` |
+|---|---|---|
+| Zero-shot | 0,811 (0,775–0,848) | 0,627 |
+| 6-shot, exemplos com rótulos humanos | 0,799 (0,759–0,833) | 0,626 |
+| 6-shot, exemplos com rótulos de estrelas, sorteio seed 1 | 0,791 (0,751–0,823) | 0,613 |
+| 6-shot, exemplos com rótulos de estrelas, sorteio seed 2 | 0,783 (0,743–0,817) | 0,582 |
+| 6-shot, exemplos com rótulos de estrelas, sorteio seed 42 (Etapa 4) | 0,741 (0,702–0,778) | 0,488 |
+
+- O sorteio da Etapa 4 foi o pior de três (sorteios de estrelas: média 0,772, desvio 0,027). A
+  maior parte da queda do 6-shot veio daquele sorteio, e não do ruído dos rótulos dos exemplos.
+- Exemplos humanos não superaram o zero-shot (−0,012, IC −0,043 a +0,018). Os rótulos humanos só
+  renderam com fine-tuning.
+
+**Curva de aprendizado** (QLoRA, subconjuntos aninhados e estratificados dos 1.500 rótulos humanos,
+seed de treino 42; de
+[reports/ablation_learning_curve_select.json](reports/ablation_learning_curve_select.json)):
+
+| Rótulos humanos | Macro-F1 (IC 95%) | F1 `neutro` | Tempo de treino |
+|---|---|---|---|
+| 0 (zero-shot) | 0,811 (0,775–0,848) | 0,627 | — |
+| 250 | 0,871 (0,842–0,899) | 0,766 | 15 min |
+| 500 | 0,893 (0,865–0,919) | 0,807 | 21 min |
+| 1.000 | 0,913 (0,887–0,938) | 0,843 | 31 min |
+| 1.500 (Etapa 5) | 0,899 (0,870–0,927) | 0,822 | — |
+
+- Com só 250 rótulos humanos o QLoRA já supera o zero-shot em +0,060 (IC +0,025 a +0,094).
+- O ganho achata depois de ~500 rótulos: nenhum de 250/500/1.000 difere dos 1.500 com IC longe do
+  zero, e as diferenças têm o tamanho da variação entre seeds abaixo.
+
+**Variância entre seeds** (os mesmos 1.500 rótulos, seeds de treino 42/43/44; de
+[reports/ablation_seeds_select.json](reports/ablation_seeds_select.json)):
+
+| Seed de treino | Macro-F1 (IC 95%) | F1 `neutro` | Melhor passo (de 279) |
+|---|---|---|---|
+| 42 (Etapa 5, publicada) | 0,899 (0,870–0,927) | 0,822 | 70 |
+| 43 | 0,908 (0,881–0,934) | 0,840 | 209 |
+| 44 | 0,909 (0,880–0,934) | 0,843 | 279 |
+
+- Média 0,906, desvio 0,005: o resultado da Etapa 5 não foi sorte de seed (a 42 foi a mais baixa),
+  e todas as seeds superam o zero-shot em cerca de +0,09 a +0,10.
+- O melhor checkpoint muda com a seed; o "melhor com menos de 1 época" era da seed 42.
+- O ruído entre seeds (desvio 0,005) é bem menor que a incerteza das 500 avaliações (±0,03).
+
 ## Limitações
 
 Serão documentadas ao longo do projeto. Já conhecida desde o início:
@@ -217,10 +268,12 @@ Serão documentadas ao longo do projeto. Já conhecida desde o início:
 - O BERTimbau foi treinado uma vez (uma seed) com hiperparâmetros padrão, não ajustados; treino em
   GPU não é determinístico bit a bit, então uma nova execução pode variar um pouco. A época foi escolhida no dev.
 - Possível contaminação: os dois datasets são públicos, e não foi verificado se estão nos dados de
-  pré-treino do SmolLM3. O few-shot foi avaliado com um único sorteio de 6 exemplos.
+  pré-treino do SmolLM3. No teste, o few-shot foi avaliado com um único sorteio de 6 exemplos (três
+  sorteios foram comparados depois na seleção do dev; ver Ablações).
 - Os treinos de QLoRA foram comparados em 500 avaliações do dev (só 20 neutras puras), então os
   intervalos são cerca de 2× mais largos que no dev inteiro; os checkpoints foram escolhidos nessas
-  mesmas 500. Cada treino usou uma única seed.
+  mesmas 500. Os modelos do teste usaram uma seed de treino cada; a variância entre seeds só foi
+  medida para o treino com rótulos humanos, no dev.
 
 ## Aprendizados
 
@@ -265,6 +318,11 @@ Preenchidos ao final de cada etapa.
   nenhuma comparação pôde ser escolhida depois de ver os números. O teste concordou com o dev em até
   0,012 para todos os modelos, e o tamanho maior transformou um resultado inconclusivo no dev (o
   fine-tuning com estrelas) numa perda mensurável.
+- **Etapa 7 — testar as próprias explicações.** A explicação da Etapa 4 (o 6-shot perdeu pelo ruído
+  dos rótulos dos exemplos) estava errada: foi principalmente um sorteio azarado. Repetir um treino
+  com outras seeds ou sorteios é um seguro barato antes de contar uma história sobre um número só.
+  As seeds também mostraram o que era geral (rótulos humanos vencem) e o que era de um treino só
+  (o melhor checkpoint cedo).
 
 ## Licença
 

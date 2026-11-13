@@ -6,7 +6,7 @@ QLoRA fine-tuning of a small open LLM (1B–3B parameters) to classify Brazilian
 reviews as **negative**, **neutral** or **positive**, compared against the base model and
 simpler baselines.
 
-> **Status:** work in progress — Stage 6 (single test-set evaluation) done.
+> **Status:** work in progress — Stage 7 (ablations on dev) done.
 > Final results are on the test set; the model is not published yet.
 
 ## Goal
@@ -201,6 +201,56 @@ training data for the human-label run; from
 - Both configurations were selected on dev, so their dev scores are optimistic.
   Details: decisions D13 and D14 in [docs/decisions.md](docs/decisions.md).
 
+### Ablations (dev selection set, 500 reviews)
+
+Exploratory (95% CIs, no multiple-comparison correction); the test set is not used again. Details:
+decision D18 in [docs/decisions.md](docs/decisions.md).
+
+**Few-shot examples** (base model, no training; from
+[reports/ablation_few_shot_select.json](reports/ablation_few_shot_select.json)):
+
+| Prompt | Macro-F1 (95% CI) | F1 `neutro` |
+|---|---|---|
+| Zero-shot | 0.811 (0.775–0.848) | 0.627 |
+| 6-shot, human-labeled examples | 0.799 (0.759–0.833) | 0.626 |
+| 6-shot, star-labeled examples, draw seed 1 | 0.791 (0.751–0.823) | 0.613 |
+| 6-shot, star-labeled examples, draw seed 2 | 0.783 (0.743–0.817) | 0.582 |
+| 6-shot, star-labeled examples, draw seed 42 (Stage 4) | 0.741 (0.702–0.778) | 0.488 |
+
+- The Stage 4 draw was the worst of three (star draws: mean 0.772, std 0.027). Most of the 6-shot
+  drop came from that draw, not from noisy example labels.
+- Human-labeled examples did not beat zero-shot (−0.012, CI −0.043 to +0.018). Human labels only
+  paid off through fine-tuning.
+
+**Learning curve** (QLoRA, nested stratified subsets of the 1,500 human labels, training seed 42;
+from [reports/ablation_learning_curve_select.json](reports/ablation_learning_curve_select.json)):
+
+| Human labels | Macro-F1 (95% CI) | F1 `neutro` | Training time |
+|---|---|---|---|
+| 0 (zero-shot) | 0.811 (0.775–0.848) | 0.627 | — |
+| 250 | 0.871 (0.842–0.899) | 0.766 | 15 min |
+| 500 | 0.893 (0.865–0.919) | 0.807 | 21 min |
+| 1,000 | 0.913 (0.887–0.938) | 0.843 | 31 min |
+| 1,500 (Stage 5) | 0.899 (0.870–0.927) | 0.822 | — |
+
+- 250 human labels already beat zero-shot by +0.060 (CI +0.025 to +0.094).
+- Gains flatten after ~500 labels: none of 250/500/1,000 differs from 1,500 with a CI clear of
+  zero, and the gaps are about the size of the seed variation below.
+
+**Seed variance** (same 1,500 labels, training seeds 42/43/44; from
+[reports/ablation_seeds_select.json](reports/ablation_seeds_select.json)):
+
+| Training seed | Macro-F1 (95% CI) | F1 `neutro` | Best step (of 279) |
+|---|---|---|---|
+| 42 (Stage 5, published) | 0.899 (0.870–0.927) | 0.822 | 70 |
+| 43 | 0.908 (0.881–0.934) | 0.840 | 209 |
+| 44 | 0.909 (0.880–0.934) | 0.843 | 279 |
+
+- Mean 0.906, std 0.005: the Stage 5 result was not a lucky seed (seed 42 was the lowest), and
+  every seed beats zero-shot by about +0.09 to +0.10.
+- The best checkpoint moves with the seed, so "best after under one epoch" was specific to seed 42.
+- Seed noise (std 0.005) is much smaller than the uncertainty from 500 evaluation reviews (±0.03).
+
 ## Limitations
 
 To be documented as the project progresses. Known from the start:
@@ -214,9 +264,11 @@ To be documented as the project progresses. Known from the start:
 - BERTimbau was trained once (one seed) with standard, untuned hyperparameters; GPU training is
   not bit-for-bit deterministic, so a rerun may differ slightly. Its training epoch was picked on dev.
 - Possible data contamination: both datasets are public, and SmolLM3's pre-training data was not
-  checked for them. Few-shot was evaluated with a single draw of 6 examples.
+  checked for them. On the test set, few-shot was evaluated with a single draw of 6 examples (three
+  draws were compared later on the dev selection set; see Ablations).
 - QLoRA runs were compared on 500 dev reviews (only 20 pure-neutral), so their intervals are about
-  twice as wide as on the full dev; checkpoints were chosen on the same 500. Each run used one seed.
+  twice as wide as on the full dev; checkpoints were chosen on the same 500. Test-set models used
+  one training seed each; seed variance was measured only for the human-label run, on dev.
 
 ## Learnings
 
@@ -259,6 +311,10 @@ To be filled in at the end of each stage.
   correction and the verdict rule were committed before the single test run, so no comparison could
   be picked after seeing the numbers. The test agreed with dev within 0.012 for every model, and its
   larger size turned an inconclusive dev result (star-label fine-tuning) into a measurable loss.
+- **Stage 7 — test your own explanations.** My Stage 4 explanation (6-shot lost because of noisy
+  example labels) was wrong: it was mostly an unlucky draw. Repeating a run with other seeds or draws
+  is cheap insurance before writing a story about one number. The seeds also showed which findings
+  were general (human labels win) and which were specific to one run (the early best checkpoint).
 
 ## License
 

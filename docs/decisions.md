@@ -512,3 +512,62 @@ Formato inspirado em ADRs (Architecture Decision Records).
     são binárias e por estrelas; o clapAI/MultiLingualSentiment não informa a origem nem a anotação
     do português (pode até conter a B2W). Fica como limitação: não dá para separar "rótulos melhores"
     de "aprendeu a anotação do RePro".
+- **Resultado C (few-shot), medido** (Kaggle T4, commit 901e812, 15 min; métricas recalculadas
+  localmente a partir das predições e iguais às do relatório;
+  `reports/ablation_few_shot_select.json`). Macro-F1 nas 500 de seleção (IC de 95%):
+
+  | Variante | Macro-F1 (IC 95%) | F1 `neutro` |
+  |---|---|---|
+  | Zero-shot (referência) | 0,811 (0,775–0,848) | 0,627 |
+  | 6-shot, exemplos humanos | 0,799 (0,759–0,833) | 0,626 |
+  | 6-shot, estrelas, sorteio seed 1 | 0,791 (0,751–0,823) | 0,613 |
+  | 6-shot, estrelas, sorteio seed 2 | 0,783 (0,743–0,817) | 0,582 |
+  | 6-shot, estrelas, sorteio seed 42 (Etapa 4) | 0,741 (0,702–0,778) | 0,488 |
+
+  - Os 3 sorteios de estrelas: média 0,772, desvio-padrão 0,027. **O sorteio da Etapa 4 foi o pior
+    dos três**; os novos sorteios ficaram +0,050 e +0,042 acima dele (IC pareado acima de zero).
+  - Os exemplos humanos ficaram +0,057 acima do sorteio de 42 (IC +0,027 a +0,087), ou seja,
+    quase o mesmo que os outros sorteios de estrelas. A comparação pareada humanos vs sorteios 1 e 2
+    não foi calculada.
+  - Nenhuma variante de 6-shot superou o zero-shot: humanos −0,012 (IC −0,043 a +0,018),
+    inconclusivo; estrelas 1 e 2 também abaixo, com IC cruzando zero (o do seed 2 por pouco).
+  - **Conclusão:** a hipótese da Etapa 4 (o 6-shot piorou pelo ruído dos rótulos dos exemplos) não
+    se confirmou. A queda veio principalmente daquele sorteio. Trocar 6 exemplos por exemplos
+    humanos não ajuda; o ganho dos rótulos humanos só aparece com fine-tuning (D16).
+- **Resultado A (curva de aprendizado), medido** (Kaggle T4, commit 901e812, 68 min; métricas
+  recalculadas localmente e iguais; `reports/ablation_learning_curve_select.json`). Seed de treino 42,
+  melhor checkpoint de cada treino:
+
+  | Rótulos humanos | Macro-F1 (IC 95%) | F1 `neutro` | Melhor passo / total | Treino |
+  |---|---|---|---|---|
+  | 0 (zero-shot) | 0,811 (0,775–0,848) | 0,627 | — | — |
+  | 250 | 0,871 (0,842–0,899) | 0,766 | 34 / 45 | 15 min |
+  | 500 | 0,893 (0,865–0,919) | 0,807 | 70 / 93 | 21 min |
+  | 1.000 (998; 2 longas descartadas) | 0,913 (0,887–0,938) | 0,843 | 93 / 186 | 31 min |
+  | 1.500 (Etapa 5) | 0,899 (0,870–0,927) | 0,822 | 70 / 279 | — |
+
+  - Já com 250 rótulos o QLoRA supera o zero-shot: +0,060 (IC +0,025 a +0,094).
+  - Contra os 1.500: 250 → −0,028 (IC −0,059 a +0,000, encosta no zero), 500 → −0,007 (IC −0,038
+    a +0,020), 1.000 → +0,014 (IC −0,011 a +0,037). Nenhuma diferença é resolvida com 500
+    avaliações.
+  - **Leitura:** o ganho cresce rápido até ~500 rótulos e depois achata; acima disso, a diferença
+    fica no tamanho da variação entre seeds (B). O 1.000 acima do 1.500 não indica que menos dados
+    é melhor: o ponto de 1.500 com seed 42 foi o mais baixo das 3 seeds.
+- **Resultado B (seeds), medido** (Kaggle T4, commit 901e812, 80 min; métricas recalculadas
+  localmente e iguais; `reports/ablation_seeds_select.json`). Os mesmos 1.500 (1.498 após descartar
+  2 longas), 279 passos:
+
+  | Seed de treino | Macro-F1 (IC 95%) | F1 `neutro` | Melhor passo |
+  |---|---|---|---|
+  | 42 (Etapa 5) | 0,899 (0,870–0,927) | 0,822 | 70 |
+  | 43 | 0,908 (0,881–0,934) | 0,840 | 209 |
+  | 44 | 0,909 (0,880–0,934) | 0,843 | 279 |
+
+  - **Média 0,906, desvio-padrão 0,005** (3 seeds). A seed 42 publicada foi a mais baixa; 43 e 44
+    ficaram +0,009 acima dela, com IC cruzando zero.
+  - Todas superam o zero-shot com folga (seed 43 +0,097, IC +0,061 a +0,135; seed 44 +0,098, IC
+    +0,057 a +0,134). O resultado da Etapa 5 não foi sorte de seed.
+  - O melhor checkpoint muda com a seed (passo 70, 209, 279): o "parou de melhorar com menos de 1
+    época" da Etapa 5 era daquela seed, não uma propriedade geral do treino.
+  - A variação entre seeds (desvio 0,005) é bem menor que a incerteza da amostra de 500 (IC de
+    ±0,03), então o limite para comparar treinos aqui é o tamanho do conjunto de seleção.
