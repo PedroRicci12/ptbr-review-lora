@@ -52,6 +52,7 @@ Justificativas: decisões D5–D9 em [docs/decisions.md](docs/decisions.md).
 ├── scripts/                # pontos de entrada de linha de comando (ex.: preparação dos dados)
 ├── notebooks/              # notebooks para Colab/Kaggle (treino e inferência em GPU)
 ├── reports/                # arquivos pequenos de resultados (só contagens e métricas, sem texto)
+├── model_card/             # model card do Hugging Face: templates, exemplo de uso, cards gerados
 ├── tests/                  # testes com pytest
 └── docs/decisions.md       # decisões de design e alternativas consideradas
 ```
@@ -112,6 +113,15 @@ Rodar as ablações (GPU) com [notebooks/07_ablations.ipynb](notebooks/07_ablati
 experimento: `EXPERIMENT = "learning_curve"`, `"seeds"` ou `"few_shot"`; cada execução gera o
 `ablation_<experiment>_results.zip`. Elas usam só a parte de seleção do dev, nunca o teste.
 
+Gerar o model card do Hugging Face (inglês e pt-BR) a partir dos relatórios e depois publicar o
+adapter de rótulos humanos (precisa de um `HF_TOKEN` com escrita no `.env`; o repositório é criado
+privado):
+
+```bash
+uv run python scripts/build_model_card.py
+uv run --group publish python scripts/publish_hf.py --adapter-dir <qlora_human_adapter descompactado>
+```
+
 ## Resultados
 
 Todo número desta seção vem de uma execução real, com o script ou notebook que o gerou.
@@ -136,9 +146,9 @@ Comparações pré-registradas (bootstrap pareado, 10.000 reamostras, IC de 98,3
 
 | | Comparação | Diferença (IC 98,3%) | Veredito |
 |---|---|---|---|
-| H1 | QLoRA rótulos humanos vs zero-shot | +0,098 (+0,086 a +0,109) | melhor |
+| H1 | QLoRA rótulos humanos vs zero-shot | +0,097 (+0,086 a +0,109) | melhor |
 | H2 | QLoRA rótulos de estrelas vs zero-shot | −0,025 (−0,037 a −0,013) | **pior** |
-| H3 | QLoRA rótulos humanos vs QLoRA estrelas | +0,122 (+0,111 a +0,134) | melhor |
+| H3 | QLoRA rótulos humanos vs QLoRA estrelas | +0,122 (+0,110 a +0,134) | melhor |
 
 - O fine-tuning só ajudou com rótulos bons: 1.500 rótulos humanos somaram ~10 pontos ao zero-shot,
   enquanto 15.000 rótulos de estrelas deixaram o modelo um pouco pior do que sem fine-tuning.

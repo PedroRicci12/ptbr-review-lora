@@ -470,9 +470,9 @@ Formato inspirado em ADRs (Architecture Decision Records).
 
   | | Comparação | Diferença (IC 98,3%) | Veredito |
   |---|---|---|---|
-  | H1 | QLoRA humanos − zero-shot | +0,098 (+0,086 a +0,109) | B melhor |
+  | H1 | QLoRA humanos − zero-shot | +0,097 (+0,086 a +0,109) | B melhor |
   | H2 | QLoRA estrelas − zero-shot | −0,025 (−0,037 a −0,013) | **B pior** |
-  | H3 | QLoRA humanos − QLoRA estrelas | +0,122 (+0,111 a +0,134) | B melhor |
+  | H3 | QLoRA humanos − QLoRA estrelas | +0,122 (+0,110 a +0,134) | B melhor |
 
   - O teste confirmou o dev em todos os modelos (diferença máxima de 0,012). O QLoRA humanos ficou
     um pouco **acima** no teste que na seleção (0,911 vs 0,899), sinal de que o viés de escolher o
@@ -571,3 +571,26 @@ Formato inspirado em ADRs (Architecture Decision Records).
     época" da Etapa 5 era daquela seed, não uma propriedade geral do treino.
   - A variação entre seeds (desvio 0,005) é bem menor que a incerteza da amostra de 500 (IC de
     ±0,03), então o limite para comparar treinos aqui é o tamanho do conjunto de seleção.
+
+## D19 — Etapa 8: publicação no Hugging Face
+
+- **Data:** 2026-11-13 (Etapa 8)
+- **O que publicar (por Pedro):** só o adapter LoRA do treino com rótulos humanos (seed 42, o
+  avaliado no teste), em `PedroRicci12/smollm3-3b-ptbr-review-sentiment-qlora`.
+  - Descartado: modelo mesclado (adapter fundido no base em fp16). Nunca foi avaliado: o adapter
+    foi treinado e medido sobre o base em NF4, e fundir muda as contas.
+  - Descartado: publicar o adapter de estrelas. É pior que o zero-shot (H2); fica como resultado
+    negativo no card.
+  - Sobem só `adapter_config.json` e `adapter_model.safetensors`; o tokenizer é o do base e o
+    README automático do PEFT é trocado pelo card.
+- **Card (por Pedro: os dois idiomas):** `README.md` em inglês com resumo em pt-BR no topo e
+  `README.pt-BR.md` completo no mesmo repositório (o Hub não tem abas de idioma).
+- **Números gerados, não digitados:** `scripts/build_model_card.py` preenche os templates de
+  `model_card/` a partir dos JSONs de `reports/`; um teste falha se o card commitado não bater com
+  os relatórios, e outro confere que o exemplo de uso tem o mesmo prompt do treino.
+  - Isso achou dois arredondamentos errados digitados à mão na Etapa 6, agora corrigidos no README
+    e no D17: H1 = +0,0975 → **+0,097** (estava +0,098) e o limite inferior do H3 = 0,1105 →
+    **+0,110** (estava +0,111). O veredito não muda.
+- **Segredo:** o token de escrita fica só no `.env` (ignorado pelo git); o script nunca o imprime.
+- **Revisão antes de abrir:** o repositório nasce privado; um notebook no Kaggle baixa o adapter
+  do Hub e precisa reproduzir o macro-F1 da seleção (0,899) antes de torná-lo público.

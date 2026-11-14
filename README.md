@@ -52,6 +52,7 @@ Rationale: decisions D5–D9 in [docs/decisions.md](docs/decisions.md).
 ├── scripts/                # command-line entry points (e.g. data preparation)
 ├── notebooks/              # Colab/Kaggle notebooks (GPU training and inference)
 ├── reports/                # small result files (counts and metrics only, no text)
+├── model_card/             # Hugging Face model card: templates, usage example, generated cards
 ├── tests/                  # pytest tests
 └── docs/decisions.md       # design decisions and alternatives considered (pt-BR)
 ```
@@ -112,6 +113,14 @@ Run the ablations (GPU) with [notebooks/07_ablations.ipynb](notebooks/07_ablatio
 experiment: `EXPERIMENT = "learning_curve"`, `"seeds"` or `"few_shot"`; each run produces
 `ablation_<experiment>_results.zip`. They use only the dev selection set, never the test set.
 
+Build the Hugging Face model card (English and pt-BR) from the reports, then publish the
+human-label adapter (needs a write `HF_TOKEN` in `.env`; the repository is created private):
+
+```bash
+uv run python scripts/build_model_card.py
+uv run --group publish python scripts/publish_hf.py --adapter-dir <unzipped qlora_human_adapter>
+```
+
 ## Results
 
 Every number in this section comes from an actual run, with the script or notebook that produced it.
@@ -135,9 +144,9 @@ Pre-registered comparisons (paired bootstrap, 10,000 resamples, Bonferroni-corre
 
 | | Comparison | Difference (98.3% CI) | Verdict |
 |---|---|---|---|
-| H1 | QLoRA human labels vs zero-shot | +0.098 (+0.086 to +0.109) | better |
+| H1 | QLoRA human labels vs zero-shot | +0.097 (+0.086 to +0.109) | better |
 | H2 | QLoRA star labels vs zero-shot | −0.025 (−0.037 to −0.013) | **worse** |
-| H3 | QLoRA human labels vs QLoRA star labels | +0.122 (+0.111 to +0.134) | better |
+| H3 | QLoRA human labels vs QLoRA star labels | +0.122 (+0.110 to +0.134) | better |
 
 - Fine-tuning helped only with good labels: 1,500 human labels added ~10 points over zero-shot,
   while 15,000 star labels made the model slightly worse than using no fine-tuning at all.
