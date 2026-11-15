@@ -594,3 +594,10 @@ Formato inspirado em ADRs (Architecture Decision Records).
 - **Segredo:** o token de escrita fica só no `.env` (ignorado pelo git); o script nunca o imprime.
 - **Revisão antes de abrir:** o repositório nasce privado; um notebook no Kaggle baixa o adapter
   do Hub e precisa reproduzir o macro-F1 da seleção (0,899) antes de torná-lo público.
+- **Upload (medido):** commit `17c2180` no Hub, repositório privado; o sha256 de
+  `adapter_model.safetensors` no Hub é igual ao do zip da Etapa 5 (`ae8904df…89a1`).
+- **Verificação (`08_hub_check.ipynb`), critério fixado antes de rodar:** o exemplo de uso do card,
+  executado sem mudanças com o adapter baixado do Hub, precisa dar macro-F1 a ±0,010 de 0,8994 na
+  seleção do dev **e** concordar em pelo menos 99% com as predições salvas na Etapa 5. Algumas
+  trocas são esperadas: o card pontua uma avaliação por vez, a Etapa 5 pontuou lotes com padding,
+  e em fp16 o resultado depende um pouco do caminho do cálculo.

@@ -121,6 +121,11 @@ uv run python scripts/build_model_card.py
 uv run --group publish python scripts/publish_hf.py --adapter-dir <unzipped qlora_human_adapter>
 ```
 
+Check the published adapter (GPU) with [notebooks/08_hub_check.ipynb](notebooks/08_hub_check.ipynb):
+it downloads the weights from the Hub, compares their sha256 with the Stage 5 file and runs the
+model card's usage example on the dev selection set (never the test set). While the Hub
+repository is private it needs an `HF_TOKEN` secret (Kaggle *Add-ons → Secrets*, Colab *Secrets*).
+
 ## Results
 
 Every number in this section comes from an actual run, with the script or notebook that produced it.

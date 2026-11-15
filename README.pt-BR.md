@@ -122,6 +122,11 @@ uv run python scripts/build_model_card.py
 uv run --group publish python scripts/publish_hf.py --adapter-dir <qlora_human_adapter descompactado>
 ```
 
+Verificar o adapter publicado (GPU) com [notebooks/08_hub_check.ipynb](notebooks/08_hub_check.ipynb):
+ele baixa os pesos do Hub, compara o sha256 com o arquivo da Etapa 5 e roda o exemplo de uso do
+model card na parte de seleção do dev (nunca no teste). Enquanto o repositório no Hub for privado,
+ele precisa de um secret `HF_TOKEN` (Kaggle *Add-ons → Secrets*, Colab *Secrets*).
+
 ## Resultados
 
 Todo número desta seção vem de uma execução real, com o script ou notebook que o gerou.
