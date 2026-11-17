@@ -601,3 +601,7 @@ Formato inspirado em ADRs (Architecture Decision Records).
   seleção do dev **e** concordar em pelo menos 99% com as predições salvas na Etapa 5. Algumas
   trocas são esperadas: o card pontua uma avaliação por vez, a Etapa 5 pontuou lotes com padding,
   e em fp16 o resultado depende um pouco do caminho do cálculo.
+- **Resultado da verificação (medido, Kaggle T4, commit 91b0708; `reports/hub_check_select.json`):**
+  **passou.** sha256 no Hub igual ao esperado; o exemplo de uso do card deu macro-F1 **0,8994**,
+  idêntico ao da Etapa 5 (diferença 0,0000), com **100% das 500 predições iguais** às salvas (zero
+  trocas, mais do que o critério exigia). Pontuar uma avaliação por vez levou 260 s.

@@ -1,0 +1,53 @@
+{
+  "adapter_repo": "PedroRicci12/smollm3-3b-ptbr-review-sentiment-qlora",
+  "hub_commit": "17c2180de9f0fc096770071d2cb6f58cf0d5dccc",
+  "weights_sha256": "ae8904dfd3770e5c1452990fbf6af9e18fb83307d58b824abafbb987ca6389a1",
+  "expected_sha256": "ae8904dfd3770e5c1452990fbf6af9e18fb83307d58b824abafbb987ca6389a1",
+  "repo_commit": "91b0708f748c096afae0734c9072b7b0a1c16d54",
+  "environment": {
+    "platform": "kaggle",
+    "gpu": "Tesla T4",
+    "python": "3.13.16",
+    "torch": "2.11.0+cu130",
+    "transformers": "5.20.2",
+    "peft": "0.21.2",
+    "bitsandbytes": "0.50.2"
+  },
+  "split": "repro_dev_select",
+  "n": 500,
+  "criterion": {
+    "reference_macro_f1": 0.8994076276155476,
+    "f1_tolerance": 0.01,
+    "min_agreement": 0.99
+  },
+  "results": {
+    "macro_f1": 0.8994076276155476,
+    "accuracy": 0.912,
+    "f1_per_class": {
+      "negativo": 0.9127906976744186,
+      "neutro": 0.8215767634854771,
+      "positivo": 0.963855421686747
+    },
+    "confusion_matrix": [
+      [
+        157,
+        15,
+        1
+      ],
+      [
+        14,
+        99,
+        8
+      ],
+      [
+        0,
+        6,
+        200
+      ]
+    ]
+  },
+  "macro_f1_difference": 0.0,
+  "agreement_with_saved": 1.0,
+  "score_seconds": 260,
+  "passed": true
+}
