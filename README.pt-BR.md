@@ -6,8 +6,13 @@ Fine-tuning com QLoRA de um LLM aberto pequeno (1B–3B parâmetros) para classi
 em português do Brasil como **negativa**, **neutra** ou **positiva**, comparado com o modelo
 base e com baselines mais simples.
 
-> **Status:** em andamento — Etapa 7 (ablações no dev) concluída.
-> Os resultados finais são do teste; o modelo ainda não foi publicado.
+> **Status:** em andamento — Etapa 8 (modelo publicado) concluída; falta o texto final.
+
+**Modelo no Hugging Face:**
+[PedroRicci12/smollm3-3b-ptbr-review-sentiment-qlora](https://huggingface.co/PedroRicci12/smollm3-3b-ptbr-review-sentiment-qlora)
+— adapter LoRA para o SmolLM3-3B, macro-F1 0,911 em 8.003 avaliações de teste rotuladas por
+humanos (zero-shot: 0,814). O model card traz um exemplo de uso, verificado: baixado do Hub, ele
+reproduz o resultado do dev (decisão D19).
 
 ## Objetivo
 
@@ -338,6 +343,10 @@ Preenchidos ao final de cada etapa.
   com outras seeds ou sorteios é um seguro barato antes de contar uma história sobre um número só.
   As seeds também mostraram o que era geral (rótulos humanos vencem) e o que era de um treino só
   (o melhor checkpoint cedo).
+- **Etapa 8 — publicar o que foi medido, e provar.** Gerar o model card a partir dos relatórios
+  achou dois números que eu tinha arredondado errado à mão. Publicar só o adapter manteve o
+  artefato idêntico ao avaliado, e rodar o próprio código do card baixando do Hub reproduziu as 500
+  predições do dev, então o que a página afirma foi conferido, e não só escrito.
 
 ## Licença
 

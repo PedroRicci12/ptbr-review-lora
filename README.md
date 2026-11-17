@@ -6,8 +6,13 @@ QLoRA fine-tuning of a small open LLM (1B–3B parameters) to classify Brazilian
 reviews as **negative**, **neutral** or **positive**, compared against the base model and
 simpler baselines.
 
-> **Status:** work in progress — Stage 7 (ablations on dev) done.
-> Final results are on the test set; the model is not published yet.
+> **Status:** work in progress — Stage 8 (model published) done; final write-up pending.
+
+**Model on Hugging Face:**
+[PedroRicci12/smollm3-3b-ptbr-review-sentiment-qlora](https://huggingface.co/PedroRicci12/smollm3-3b-ptbr-review-sentiment-qlora)
+— LoRA adapter for SmolLM3-3B, macro-F1 0.911 on 8,003 held-out human-labeled reviews
+(zero-shot: 0.814). The model card includes a usage example, checked to reproduce the dev result
+from the Hub (decision D19).
 
 ## Goal
 
@@ -329,6 +334,10 @@ To be filled in at the end of each stage.
   example labels) was wrong: it was mostly an unlucky draw. Repeating a run with other seeds or draws
   is cheap insurance before writing a story about one number. The seeds also showed which findings
   were general (human labels win) and which were specific to one run (the early best checkpoint).
+- **Stage 8 — publish what you measured, and prove it.** Generating the model card from the
+  reports caught two numbers I had rounded wrong by hand. Publishing only the adapter kept the
+  artifact identical to the evaluated one, and running the card's own code from the Hub reproduced
+  all 500 dev predictions, so the page's claims are checked, not just written.
 
 ## License
 

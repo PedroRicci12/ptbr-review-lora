@@ -605,3 +605,4 @@ Formato inspirado em ADRs (Architecture Decision Records).
   **passou.** sha256 no Hub igual ao esperado; o exemplo de uso do card deu macro-F1 **0,8994**,
   idêntico ao da Etapa 5 (diferença 0,0000), com **100% das 500 predições iguais** às salvas (zero
   trocas, mais do que o critério exigia). Pontuar uma avaliação por vez levou 260 s.
+- **Público (2026-11-17):** Pedro tornou o repositório público; acesso anônimo conferido (sem token, mesmo commit `17c2180`).
