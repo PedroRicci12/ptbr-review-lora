@@ -11,6 +11,7 @@ fine-tuning and against simpler baselines, on a free Kaggle T4 GPU.
 
 **Model on Hugging Face:**
 [PedroRicci12/smollm3-3b-ptbr-review-sentiment-qlora](https://huggingface.co/PedroRicci12/smollm3-3b-ptbr-review-sentiment-qlora)
+· **Article (pt-BR):** [docs/article.md](docs/article.md)
 
 ## TL;DR
 

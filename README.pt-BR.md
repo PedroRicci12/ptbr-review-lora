@@ -11,6 +11,7 @@ mesmo modelo sem fine-tuning e com baselines mais simples, numa GPU T4 gratuita 
 
 **Modelo no Hugging Face:**
 [PedroRicci12/smollm3-3b-ptbr-review-sentiment-qlora](https://huggingface.co/PedroRicci12/smollm3-3b-ptbr-review-sentiment-qlora)
+· **Artigo:** [docs/article.md](docs/article.md)
 
 ## Resumo
 
