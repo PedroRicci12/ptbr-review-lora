@@ -5,17 +5,33 @@
 [![tests](https://github.com/PedroRicci12/ptbr-review-lora/actions/workflows/tests.yml/badge.svg)](https://github.com/PedroRicci12/ptbr-review-lora/actions/workflows/tests.yml)
 [![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a%20do%20c%C3%B3digo-MIT-blue.svg)](LICENSE)
 
-Fine-tuning com QLoRA de um LLM aberto pequeno (1B–3B parâmetros) para classificar avaliações
-em português do Brasil como **negativa**, **neutra** ou **positiva**, comparado com o modelo
-base e com baselines mais simples.
-
-> **Status:** em andamento — Etapa 8 (modelo publicado) concluída; falta o texto final.
+Fine-tuning com QLoRA de um LLM aberto pequeno (SmolLM3-3B) para classificar avaliações de
+produtos em português do Brasil como **negativa**, **neutra** ou **positiva**, comparado com o
+mesmo modelo sem fine-tuning e com baselines mais simples, numa GPU T4 gratuita do Kaggle.
 
 **Modelo no Hugging Face:**
 [PedroRicci12/smollm3-3b-ptbr-review-sentiment-qlora](https://huggingface.co/PedroRicci12/smollm3-3b-ptbr-review-sentiment-qlora)
-— adapter LoRA para o SmolLM3-3B, macro-F1 0,911 em 8.003 avaliações de teste rotuladas por
-humanos (zero-shot: 0,814). O model card traz um exemplo de uso, verificado: baixado do Hub, ele
-reproduz o resultado do dev (decisão D19).
+
+## Resumo
+
+![Macro-F1 dos seis modelos no teste](figures/pt-BR/test_macro_f1.png)
+
+- **1.500 rótulos humanos valeram mais que 15.000 notas em estrelas.** O QLoRA com 1.500
+  avaliações rotuladas por humanos chegou a **macro-F1 0,911** em 8.003 avaliações de teste,
+  +0,097 acima do mesmo modelo em zero-shot. O QLoRA com 15.000 rótulos derivados das estrelas
+  deixou o modelo *pior* que o zero-shot (−0,025). Os dois resultados vêm de comparações
+  pré-registradas antes da única execução no teste.
+- **O LLM base foi a baseline mais forte:** o SmolLM3-3B em zero-shot (0,814) superou o BERTimbau
+  ajustado (0,784) sem nenhum treino.
+- **Poucos rótulos rendem muito:** no dev, 250 rótulos humanos já superaram o zero-shot, e o
+  ganho achatou depois de cerca de 500.
+- **Os resultados negativos ficaram:** o prompt 6-shot, o fine-tuning com estrelas e o modelo em
+  4 bits sem treino ficaram abaixo do zero-shot, e uma explicação minha se mostrou errada (ver
+  [Ablações](#ablações-parte-de-seleção-do-dev-500-avaliações)).
+
+Todo número deste README vem de um relatório JSON em [reports/](reports/), gerado pelo script ou
+notebook citado ao lado. Decisões de design, alternativas e incidentes estão registrados em
+[docs/decisions.md](docs/decisions.md).
 
 ## Objetivo
 
@@ -23,7 +39,7 @@ Medir se o fine-tuning eficiente em parâmetros (LoRA/QLoRA) de um LLM pequeno m
 classificação de sentimento em pt-BR em relação a:
 
 1. o mesmo modelo sem fine-tuning (prompting zero-shot / few-shot);
-2. baselines clássicas e baseadas em encoder (definidas na Etapa 3).
+2. baselines clássica (TF-IDF) e baseada em encoder (BERTimbau).
 
 ## Dados
 
@@ -51,93 +67,9 @@ Justificativas: decisões D5–D9 em [docs/decisions.md](docs/decisions.md).
 - **Incerteza:** bootstrap de percentis com 95% (1.000 reamostras); modelos são comparados com
   bootstrap pareado nas mesmas reamostras.
 - **Protocolo:** toda escolha é feita no dev. O teste é usado uma única vez, no fim, para todos
-  os modelos congelados juntos.
-
-## Estrutura do repositório
-
-```
-├── src/ptbr_review_lora/   # código reutilizável (dados, prompts, avaliação)
-├── scripts/                # pontos de entrada de linha de comando (ex.: preparação dos dados)
-├── notebooks/              # notebooks para Colab/Kaggle (treino e inferência em GPU)
-├── reports/                # arquivos pequenos de resultados (só contagens e métricas, sem texto)
-├── model_card/             # model card do Hugging Face: templates, exemplo de uso, cards gerados
-├── tests/                  # testes com pytest
-└── docs/decisions.md       # decisões de design e alternativas consideradas
-```
-
-## Instalação
-
-Requisitos: Python 3.12 e [uv](https://docs.astral.sh/uv/).
-
-```bash
-git clone <url-do-repo>
-cd ptbr-review-lora
-uv sync
-cp .env.example .env   # depois adicione seu token do Hugging Face
-```
-
-## Uso
-
-Rodar os testes:
-
-```bash
-uv run pytest
-```
-
-Baixar (~55 MB, com versão fixada e checksum verificado) e preparar os dados:
-
-```bash
-uv run python scripts/prepare_data.py
-```
-
-Treinar as baselines clássicas e avaliá-las no dev (~2 minutos na CPU de um notebook):
-
-```bash
-uv run python scripts/run_baselines.py
-```
-
-Ajustar a baseline BERTimbau (GPU) com
-[notebooks/03b_bertimbau.ipynb](notebooks/03b_bertimbau.ipynb), em qualquer uma das plataformas:
-
-- **Google Colab:** [abrir no Colab](https://colab.research.google.com/github/PedroRicci12/ptbr-review-lora/blob/main/notebooks/03b_bertimbau.ipynb),
-  escolha uma GPU T4 e rode todas as células; o navegador baixa o `bertimbau_results.zip`.
-- **Kaggle:** importe o notebook do GitHub (*File → Import Notebook*), ajuste *Accelerator →
-  GPU T4 x2* e *Internet → on* e clique em *Save Version → Save & Run All*; o zip fica na aba
-  *Output* da versão. GPUs no Kaggle exigem conta verificada por celular.
-
-Descompacte os resultados na raiz do repositório: os arquivos vão para `reports/` e `predictions/`.
-
-Avaliar o LLM base (SmolLM3-3B, zero-shot e 6-shot, GPU) com
-[notebooks/04_base_llm.ipynb](notebooks/04_base_llm.ipynb), no Colab
-([abrir no Colab](https://colab.research.google.com/github/PedroRicci12/ptbr-review-lora/blob/main/notebooks/04_base_llm.ipynb))
-ou no Kaggle, do mesmo jeito; ele gera o `smollm3_base_results.zip`.
-
-Fazer o fine-tuning do SmolLM3-3B com QLoRA (GPU) com [notebooks/05_qlora.ipynb](notebooks/05_qlora.ipynb),
-uma vez por conjunto de treino: ajuste `TRAINING_SET = "stars"` ou `"human"` na célula de configuração.
-Cada execução gera o `qlora_<set>_results.zip` (descompacte na raiz do repositório) e o
-`qlora_<set>_adapter.zip` (pesos do LoRA; guarde fora do repositório).
-
-Rodar as ablações (GPU) com [notebooks/07_ablations.ipynb](notebooks/07_ablations.ipynb), uma vez por
-experimento: `EXPERIMENT = "learning_curve"`, `"seeds"` ou `"few_shot"`; cada execução gera o
-`ablation_<experiment>_results.zip`. Elas usam só a parte de seleção do dev, nunca o teste.
-
-Gerar o model card do Hugging Face (inglês e pt-BR) a partir dos relatórios e depois publicar o
-adapter de rótulos humanos (precisa de um `HF_TOKEN` com escrita no `.env`; o repositório é criado
-privado):
-
-```bash
-uv run python scripts/build_model_card.py
-uv run --group publish python scripts/publish_hf.py --adapter-dir <qlora_human_adapter descompactado>
-```
-
-Verificar o adapter publicado (GPU) com [notebooks/08_hub_check.ipynb](notebooks/08_hub_check.ipynb):
-ele baixa os pesos do Hub, compara o sha256 com o arquivo da Etapa 5 e roda o exemplo de uso do
-model card na parte de seleção do dev (nunca no teste). Enquanto o repositório no Hub for privado,
-ele precisa de um secret `HF_TOKEN` (Kaggle *Add-ons → Secrets*, Colab *Secrets*).
+  os modelos congelados juntos, com as comparações e a regra de veredito commitadas antes.
 
 ## Resultados
-
-Todo número desta seção vem de uma execução real, com o script ou notebook que o gerou.
 
 ### Resultados finais no teste
 
@@ -165,6 +97,8 @@ Comparações pré-registradas (bootstrap pareado, 10.000 reamostras, IC de 98,3
 
 - O fine-tuning só ajudou com rótulos bons: 1.500 rótulos humanos somaram ~10 pontos ao zero-shot,
   enquanto 15.000 rótulos de estrelas deixaram o modelo um pouco pior do que sem fine-tuning.
+- Zero-shot vs BERTimbau ajustado (descritivo, não pré-registrado como hipótese): +0,029 (IC
+  pareado de 95%: +0,019 a +0,040).
 - O teste confirma o dev em todos os modelos (diferenças de no máximo 0,012 de macro-F1); no dev a H2
   era inconclusiva, e o teste, maior, mostra uma pequena perda.
 - O modelo com rótulos humanos treinou com avaliações do RePro (uma divisão diferente do teste),
@@ -186,12 +120,18 @@ Comparações pré-registradas (bootstrap pareado, 10.000 reamostras, IC de 98,3
 | SmolLM3-3B sem fine-tuning, 6-shot | 0,760 (0,740–0,778) | 0,801 | 0,535 |
 | SmolLM3-3B sem fine-tuning, zero-shot | **0,815** (0,795–0,833) | 0,851 | 0,638 |
 
+- Incluir o título e balancear os pesos das classes ajudou a TF-IDF (bootstrap pareado, IC de
+  95% da diferença acima de zero).
+- O BERTimbau ajustado supera a melhor TF-IDF em +0,026 de macro-F1 (IC pareado de 95%: +0,009
+  a +0,042), quase tudo no `neutro`. Treinou em ~25 min numa T4 do Kaggle, contra ~25 s da TF-IDF
+  na CPU de um notebook. Uma segunda época baixou a perda de treino, mas também o macro-F1 no dev
+  (0,787 → 0,774), então ficou a época 1.
 - O LLM base em zero-shot supera o BERTimbau ajustado em +0,028 de macro-F1 (IC pareado de 95%:
   +0,007 a +0,050). Colocar 6 exemplos no prompt piorou (−0,055), então ficou o zero-shot.
 - Pontuar os rótulos e gerar a resposta concordam em 99,85% das avaliações; 0% das respostas
   geradas foram inválidas.
-- Cuidado: a B2W e o RePro são públicos, então podem estar nos dados de pré-treino do SmolLM3
-  (não verificado); isso inflaria o resultado do zero-shot.
+- Todas essas configurações foram escolhidas no dev, então os números delas no dev são otimistas.
+  Detalhes: decisões D13–D15 em [docs/decisions.md](docs/decisions.md).
 
 **Fine-tuning com QLoRA, na parte de seleção do dev (500 avaliações)** (as outras 1.500 do dev são
 o treino da versão com rótulos humanos; de
@@ -211,42 +151,16 @@ o treino da versão com rótulos humanos; de
 - O QLoRA com estrelas não superou o zero-shot (−0,023, IC −0,059 a +0,013) e empatou com o
   BERTimbau, concordando com ele em 95,4% das avaliações: com os mesmos rótulos ruidosos, um
   encoder de 110M e um LLM de 3B aprendem quase a mesma coisa.
-- O QLoRA com rótulos humanos soma +0,088 ao zero-shot (IC +0,048 a +0,129), quase tudo no
-  `neutro`; o melhor checkpoint veio com só 70 passos (menos de 1 época).
+- O QLoRA com rótulos humanos soma +0,088 ao zero-shot (IC +0,048 a +0,129), quase tudo no `neutro`.
 - Só carregar o modelo em 4 bits custou 0,105 de macro-F1 antes do treino (o neutro quase sumiu).
-- O treino com rótulos humanos aprendeu com a mesma fonte e anotação da avaliação, então parte do
-  ganho pode ser ajuste a essa anotação, e não só rótulos "mais corretos".
-
-- Incluir o título e balancear os pesos das classes ajudou a TF-IDF (bootstrap pareado, IC de
-  95% da diferença acima de zero).
-- O BERTimbau ajustado supera a melhor TF-IDF em +0,026 de macro-F1 (IC pareado de 95%: +0,009
-  a +0,042), quase tudo no `neutro`. Treinou em ~25 min numa T4 do Kaggle, contra ~25 s da TF-IDF
-  na CPU de um notebook.
-- Uma segunda época baixou a perda de treino, mas também o macro-F1 no dev (0,787 → 0,774),
-  então ficou a época 1.
-- As duas configurações foram escolhidas no dev, então os números delas no dev são otimistas.
-  Detalhes: decisões D13 e D14 em [docs/decisions.md](docs/decisions.md).
+  Detalhes: decisão D16.
 
 ### Ablações (parte de seleção do dev, 500 avaliações)
 
 Exploratórias (IC de 95%, sem correção para múltiplas comparações); o teste não é usado de novo.
 Detalhes: decisão D18 em [docs/decisions.md](docs/decisions.md).
 
-**Exemplos do few-shot** (modelo base, sem treino; de
-[reports/ablation_few_shot_select.json](reports/ablation_few_shot_select.json)):
-
-| Prompt | Macro-F1 (IC 95%) | F1 `neutro` |
-|---|---|---|
-| Zero-shot | 0,811 (0,775–0,848) | 0,627 |
-| 6-shot, exemplos com rótulos humanos | 0,799 (0,759–0,833) | 0,626 |
-| 6-shot, exemplos com rótulos de estrelas, sorteio seed 1 | 0,791 (0,751–0,823) | 0,613 |
-| 6-shot, exemplos com rótulos de estrelas, sorteio seed 2 | 0,783 (0,743–0,817) | 0,582 |
-| 6-shot, exemplos com rótulos de estrelas, sorteio seed 42 (Etapa 4) | 0,741 (0,702–0,778) | 0,488 |
-
-- O sorteio da Etapa 4 foi o pior de três (sorteios de estrelas: média 0,772, desvio 0,027). A
-  maior parte da queda do 6-shot veio daquele sorteio, e não do ruído dos rótulos dos exemplos.
-- Exemplos humanos não superaram o zero-shot (−0,012, IC −0,043 a +0,018). Os rótulos humanos só
-  renderam com fine-tuning.
+![Curva de aprendizado: macro-F1 por número de rótulos humanos](figures/pt-BR/learning_curve.png)
 
 **Curva de aprendizado** (QLoRA, subconjuntos aninhados e estratificados dos 1.500 rótulos humanos,
 seed de treino 42; de
@@ -278,29 +192,54 @@ seed de treino 42; de
 - O melhor checkpoint muda com a seed; o "melhor com menos de 1 época" era da seed 42.
 - O ruído entre seeds (desvio 0,005) é bem menor que a incerteza das 500 avaliações (±0,03).
 
+**Exemplos do few-shot** (modelo base, sem treino; de
+[reports/ablation_few_shot_select.json](reports/ablation_few_shot_select.json)):
+
+| Prompt | Macro-F1 (IC 95%) | F1 `neutro` |
+|---|---|---|
+| Zero-shot | 0,811 (0,775–0,848) | 0,627 |
+| 6-shot, exemplos com rótulos humanos | 0,799 (0,759–0,833) | 0,626 |
+| 6-shot, exemplos com rótulos de estrelas, sorteio seed 1 | 0,791 (0,751–0,823) | 0,613 |
+| 6-shot, exemplos com rótulos de estrelas, sorteio seed 2 | 0,783 (0,743–0,817) | 0,582 |
+| 6-shot, exemplos com rótulos de estrelas, sorteio seed 42 (Etapa 4) | 0,741 (0,702–0,778) | 0,488 |
+
+- O sorteio da Etapa 4 foi o pior de três (sorteios de estrelas: média 0,772, desvio 0,027). A
+  maior parte da queda do 6-shot veio daquele sorteio, e não do ruído dos rótulos dos exemplos,
+  como eu tinha suposto.
+- Exemplos humanos não superaram o zero-shot (−0,012, IC −0,043 a +0,018). Os rótulos humanos só
+  renderam com fine-tuning.
+
+### Verificação do modelo publicado
+
+O adapter baixado do Hub tem o mesmo sha256 do avaliado, e o exemplo de uso do model card, rodado
+sem mudanças, reproduziu as 500 predições da Etapa 5 na seleção (macro-F1 0,8994, nenhuma
+diferença); de [reports/hub_check_select.json](reports/hub_check_select.json), decisão D19.
+
 ## Limitações
 
-Serão documentadas ao longo do projeto. Já conhecida desde o início:
-
-- Rótulos derivados de estrelas têm ruído: no dev, concordam com o rótulo humano em 74,4% das avaliações.
-- A distribuição de classes do teste é artificial (o RePro amostrou ~2.000 avaliações por nota),
-  então a acurácia não reflete o tráfego real; a métrica principal é o macro-F1.
-- Domínio: avaliações de produtos de e-commerce de 2018, não de restaurantes ou delivery.
-- Só duplicatas exatas de texto entre treino e avaliação foram removidas; quase-duplicatas não.
-- Os hiperparâmetros do TF-IDF foram fixados, não ajustados: a baseline clássica é razoável, mas não ótima.
-- O BERTimbau foi treinado uma vez (uma seed) com hiperparâmetros padrão, não ajustados; treino em
-  GPU não é determinístico bit a bit, então uma nova execução pode variar um pouco. A época foi escolhida no dev.
-- Possível contaminação: os dois datasets são públicos, e não foi verificado se estão nos dados de
-  pré-treino do SmolLM3. No teste, o few-shot foi avaliado com um único sorteio de 6 exemplos (três
-  sorteios foram comparados depois na seleção do dev; ver Ablações).
-- Os treinos de QLoRA foram comparados em 500 avaliações do dev (só 20 neutras puras), então os
-  intervalos são cerca de 2× mais largos que no dev inteiro; os checkpoints foram escolhidos nessas
-  mesmas 500. Os modelos do teste usaram uma seed de treino cada; a variância entre seeds só foi
-  medida para o treino com rótulos humanos, no dev.
+- **Mesmo esquema de anotação:** o modelo com rótulos humanos treinou com avaliações do RePro e
+  foi testado em outra parte do RePro, então parte do ganho pode ser aprender essa anotação, e não
+  só rótulos "melhores". Não achei um dataset em pt-BR de outro domínio, verificado, com 3 classes
+  anotadas por humanos para testar isso (D18).
+- **Possível contaminação:** os dois datasets são públicos, e não foi verificado se estão nos dados
+  de pré-treino do SmolLM3; isso poderia inflar o zero-shot.
+- **Domínio:** avaliações de produtos de uma loja, escritas em 2018. Outros domínios e outras
+  variedades do português não foram avaliados.
+- **Equilíbrio de classes artificial:** o RePro amostrou ~2.000 avaliações por nota, então a
+  acurácia não reflete o tráfego real; a métrica principal é o macro-F1.
+- **Rótulos de estrelas com ruído:** no dev, concordam com o rótulo humano em 74,4% das
+  avaliações. Essa é a premissa da comparação, não um defeito.
+- **Conjunto de seleção pequeno:** os treinos de QLoRA foram comparados em 500 avaliações do dev
+  (só 20 neutras puras), então os intervalos são cerca de 2× mais largos que no dev inteiro, e os
+  checkpoints foram escolhidos nessas mesmas 500.
+- **Uma seed no teste:** cada modelo do teste foi treinado uma vez; a variância entre seeds só foi
+  medida para o treino com rótulos humanos, no dev. BERTimbau e TF-IDF usaram hiperparâmetros
+  padrão, não ajustados: são baselines razoáveis, não ótimas.
+- **Quase-duplicatas:** só duplicatas exatas de texto entre treino e avaliação foram removidas.
+- O few-shot nunca rodou no teste: perdeu para o zero-shot no dev com um sorteio de 6 exemplos
+  (Etapa 4), e três sorteios foram comparados depois, também no dev (ver Ablações).
 
 ## Aprendizados
-
-Preenchidos ao final de cada etapa.
 
 - **Etapa 1 — caminhos com acento quebram a instalação editável no Python 3.12 / Windows.**
   Com o projeto em `...\Área de Trabalho\...`, o `uv run` falhou com
@@ -350,6 +289,94 @@ Preenchidos ao final de cada etapa.
   achou dois números que eu tinha arredondado errado à mão. Publicar só o adapter manteve o
   artefato idêntico ao avaliado, e rodar o próprio código do card baixando do Hub reproduziu as 500
   predições do dev, então o que a página afirma foi conferido, e não só escrito.
+
+## Como reproduzir
+
+### Instalação
+
+Requisitos: Python 3.12 e [uv](https://docs.astral.sh/uv/). As etapas com GPU rodam numa T4
+gratuita do Kaggle (ou do Colab); nada aqui treina na CPU.
+
+```bash
+git clone https://github.com/PedroRicci12/ptbr-review-lora.git
+cd ptbr-review-lora
+uv sync
+cp .env.example .env   # só é preciso para publicar no Hugging Face
+```
+
+### Etapas locais (CPU)
+
+Rodar os testes:
+
+```bash
+uv run pytest
+```
+
+Baixar (~55 MB, com versão fixada e checksum verificado) e preparar os dados:
+
+```bash
+uv run python scripts/prepare_data.py
+```
+
+Treinar as baselines clássicas e avaliá-las no dev (~2 minutos na CPU de um notebook):
+
+```bash
+uv run python scripts/run_baselines.py
+```
+
+Gerar de novo o model card e as figuras a partir dos relatórios:
+
+```bash
+uv run python scripts/build_model_card.py
+uv run --group figures python scripts/make_figures.py
+```
+
+### Notebooks com GPU (Kaggle ou Colab)
+
+Cada notebook clona este repositório, reconstrói os dados e para se as contagens forem diferentes
+de [reports/data_summary.json](reports/data_summary.json).
+
+- **Kaggle:** importe o notebook do GitHub (*File → Import Notebook*), ajuste *Accelerator →
+  GPU T4 x2* e *Internet → on* e clique em *Save Version → Save & Run All*; o zip fica na aba
+  *Output* da versão. GPUs no Kaggle exigem conta verificada por celular.
+- **Google Colab:** abra o notebook a partir do GitHub, escolha uma GPU T4 e rode todas as
+  células; o navegador baixa o zip.
+
+Descompacte cada zip de resultados na raiz do repositório: os arquivos vão para `reports/` e
+`predictions/`.
+
+| Notebook | O que faz | Saída |
+|---|---|---|
+| [03b_bertimbau.ipynb](notebooks/03b_bertimbau.ipynb) | Ajusta a baseline BERTimbau | `bertimbau_results.zip` |
+| [04_base_llm.ipynb](notebooks/04_base_llm.ipynb) | SmolLM3-3B zero-shot e 6-shot | `smollm3_base_results.zip` |
+| [05_qlora.ipynb](notebooks/05_qlora.ipynb) | QLoRA; ajuste `TRAINING_SET = "stars"` ou `"human"` | `qlora_<set>_results.zip`, `qlora_<set>_adapter.zip` (guarde fora do repositório) |
+| [07_ablations.ipynb](notebooks/07_ablations.ipynb) | Ajuste `EXPERIMENT = "learning_curve"`, `"seeds"` ou `"few_shot"`; só dev | `ablation_<experiment>_results.zip` |
+| [08_hub_check.ipynb](notebooks/08_hub_check.ipynb) | Verifica o adapter publicado, baixando do Hub; só dev | `hub_check_results.zip` |
+
+A avaliação única no teste (Etapa 6) é o [scripts/evaluate_test.py](scripts/evaluate_test.py);
+ele se recusa a rodar de novo quando o `reports/test_results.json` já existe.
+
+### Publicar (Hugging Face)
+
+Precisa de um `HF_TOKEN` com escrita no `.env`; o repositório é criado privado:
+
+```bash
+uv run --group publish python scripts/publish_hf.py --adapter-dir <qlora_human_adapter descompactado>
+```
+
+## Estrutura do repositório
+
+```
+├── src/ptbr_review_lora/   # código reutilizável (dados, prompts, treino, métricas, protocolo)
+├── scripts/                # linha de comando (dados, baselines, teste, card, figuras, publicação)
+├── notebooks/              # notebooks para Kaggle/Colab (treino e inferência em GPU)
+├── reports/                # resultados (só contagens e métricas, sem texto de avaliação)
+├── predictions/            # rótulo previsto por avaliação (número da linha + rótulo, sem texto)
+├── figures/                # PNGs gerados a partir de reports/ (en e pt-BR)
+├── model_card/             # model card do Hugging Face: templates, exemplo de uso, cards gerados
+├── tests/                  # testes com pytest (rodados pelo GitHub Actions)
+└── docs/decisions.md       # decisões de design, alternativas e incidentes
+```
 
 ## Licença
 
