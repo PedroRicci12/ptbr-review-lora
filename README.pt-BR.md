@@ -350,4 +350,10 @@ Preenchidos ao final de cada etapa.
 
 ## Licença
 
-A definir (precisa ser compatível com as licenças do dataset e do modelo base).
+- **Código** (`src/`, `scripts/`, `notebooks/`, `tests/`, `model_card/*.py`): [MIT](LICENSE).
+- **Artefatos derivados dos dados** (`predictions/`, o adapter publicado e o model card):
+  [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/), herdada da
+  [B2W-Reviews01](https://github.com/americanas-tech/b2w-reviews01) e do
+  [RePro](https://huggingface.co/datasets/lucasnil/repro); só uso não comercial.
+- Os datasets não são redistribuídos aqui: o `scripts/prepare_data.py` baixa os dois das fontes
+  originais. O modelo base, SmolLM3-3B, é Apache 2.0.

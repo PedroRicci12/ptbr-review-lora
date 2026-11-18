@@ -341,4 +341,10 @@ To be filled in at the end of each stage.
 
 ## License
 
-To be defined (it must be compatible with the dataset and base model licenses).
+- **Code** (`src/`, `scripts/`, `notebooks/`, `tests/`, `model_card/*.py`): [MIT](LICENSE).
+- **Data-derived artifacts** (`predictions/`, the published adapter and its model card):
+  [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/), inherited from
+  [B2W-Reviews01](https://github.com/americanas-tech/b2w-reviews01) and
+  [RePro](https://huggingface.co/datasets/lucasnil/repro); non-commercial use only.
+- The datasets are not redistributed here: `scripts/prepare_data.py` downloads them from their
+  sources. The base model, SmolLM3-3B, is Apache 2.0.
