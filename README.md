@@ -2,6 +2,9 @@
 
 **English** | [Português](README.pt-BR.md)
 
+[![tests](https://github.com/PedroRicci12/ptbr-review-lora/actions/workflows/tests.yml/badge.svg)](https://github.com/PedroRicci12/ptbr-review-lora/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/code%20license-MIT-blue.svg)](LICENSE)
+
 QLoRA fine-tuning of a small open LLM (1B–3B parameters) to classify Brazilian Portuguese
 reviews as **negative**, **neutral** or **positive**, compared against the base model and
 simpler baselines.

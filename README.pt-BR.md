@@ -2,6 +2,9 @@
 
 [English](README.md) | **Português**
 
+[![tests](https://github.com/PedroRicci12/ptbr-review-lora/actions/workflows/tests.yml/badge.svg)](https://github.com/PedroRicci12/ptbr-review-lora/actions/workflows/tests.yml)
+[![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a%20do%20c%C3%B3digo-MIT-blue.svg)](LICENSE)
+
 Fine-tuning com QLoRA de um LLM aberto pequeno (1B–3B parâmetros) para classificar avaliações
 em português do Brasil como **negativa**, **neutra** ou **positiva**, comparado com o modelo
 base e com baselines mais simples.
