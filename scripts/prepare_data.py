@@ -84,7 +84,7 @@ def main() -> None:
         },
     }
     SUMMARY.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    SUMMARY.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
     print(json.dumps(summary, indent=2, ensure_ascii=False))
 
 

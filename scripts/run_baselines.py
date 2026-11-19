@@ -104,7 +104,7 @@ def main() -> None:
         save_predictions(PREDICTIONS / f"{name}.csv", preds)
 
     REPORT.parent.mkdir(parents=True, exist_ok=True)
-    REPORT.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    REPORT.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
     print(f"saved {REPORT.relative_to(ROOT)}")
 
 

@@ -84,7 +84,7 @@ def main() -> None:
         "descriptive_comparisons": descriptive,
         "seconds": round(time.perf_counter() - start),
     }
-    REPORT.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    REPORT.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
     print(f"saved {REPORT.relative_to(ROOT)}")
 
 
